@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovelQuest — بازی ترجمهٔ وب‌ناول</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter/index.css">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg2: #0a0b13;
+            --panel: #101220;
+            --panel2: #161a2b;
+            --panel3: #1d2237;
+            --line: rgba(255, 255, 255, .075);
+            --line2: rgba(255, 255, 255, .16);
+            --txt: #e8eaf6;
+            --mut: #9298b4;
+            --dim: #5f6583;
+            --cy: #22d3ee;
+            --vi: #a78bfa;
+            --am: #fbbf24;
+            --gr: #34d399;
+            --rd: #fb7185;
+            --glow-cy: 0 0 0 1px rgba(34, 211, 238, .35), 0 8px 30px -8px rgba(34, 211, 238, .45);
+            --r: 16px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(900px 500px at 85% -10%, rgba(167, 139, 250, .13), transparent 60%),
+                radial-gradient(800px 500px at 5% 0%, rgba(34, 211, 238, .10), transparent 55%),
+                linear-gradient(180deg, #080911 0%, #06060b 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
+            font-size: 14px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: .35;
+            background-image: linear-gradient(rgba(255, 255, 255, .028) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .028) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: radial-gradient(circle at 50% 0%, #000, transparent 75%);
+        }
+
+        .en,
+        pre,
+        textarea.ltr,
+        .mono {
+            font-family: 'Inter', 'Segoe UI', monospace
+        }
+
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 14px 16px 120px
+        }
+
+        /* ---------- HUD ---------- */
+        .hud {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            margin: 0 -16px 16px;
+            backdrop-filter: blur(14px);
+            background: linear-gradient(180deg, rgba(10, 11, 19, .92), rgba(10, 11, 19, .65));
+            border-bottom: 1px solid var(--line);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-weight: 800;
+            letter-spacing: .2px;
+            cursor: pointer
+        }
+
+        .logo .mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 17px;
+            background: linear-gradient(135deg, var(--cy), var(--vi));
+            box-shadow: 0 6px 18px -6px rgba(34, 211, 238, .7)
+        }
+
+        .logo small {
+            display: block;
+            font-size: 10px;
+            color: var(--dim);
+            font-weight: 600
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 8px;
+            margin-inline-start: auto;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .lv {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            padding: 5px 10px 5px 6px;
+            border-radius: 999px
+        }
+
+        .lv b {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            color: #08121a;
+            background: linear-gradient(135deg, var(--am), #f59e0b);
+            box-shadow: 0 0 14px -2px rgba(251, 191, 36, .7)
+        }
+
+        .xpbar {
+            width: 110px;
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .08);
+            overflow: hidden
+        }
+
+        .xpbar i {
+            display: block;
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--cy), var(--vi));
+            transition: width .6s cubic-bezier(.2, .9, .2, 1);
+            box-shadow: 0 0 12px rgba(34, 211, 238, .6)
+        }
+
+        .stat {
+            font-size: 11px;
+            color: var(--mut);
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid var(--line);
+            padding: 6px 10px;
+            border-radius: 999px;
+            white-space: nowrap
+        }
+
+        .stat b {
+            color: var(--txt)
+        }
+
+        .iconbtn {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            color: var(--mut);
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: .18s
+        }
+
+        .iconbtn:hover {
+            color: var(--txt);
+            border-color: var(--line2);
+            background: rgba(255, 255, 255, .08)
+        }
+
+        /* ---------- generic ---------- */
+        .screen {
+            display: none;
+            animation: fade .35s ease
+        }
+
+        .screen.active {
+            display: block
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012));
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            padding: 16px
+        }
+
+        .sect-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0 0 12px
+        }
+
+        .sect-title h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800
+        }
+
+        .sect-title .num {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 800;
+            background: rgba(34, 211, 238, .14);
+            color: var(--cy);
+            border: 1px solid rgba(34, 211, 238, .3)
+        }
+
+        .sect-title p {
+            margin: 2px 0 0;
+            font-size: 11.5px;
+            color: var(--dim)
+        }
+
+        .sect-title .side {
+            margin-inline-start: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            background: rgba(255, 255, 255, .045);
+            border: 1px solid var(--line);
+            color: var(--txt);
+            padding: 10px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            transition: transform .12s ease, background .18s, border-color .18s, box-shadow .18s;
+            user-select: none;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, .09);
+            border-color: var(--line2);
+            transform: translateY(-1px)
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(.985)
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .btn-go {
+            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+            color: #04121a;
+            border: none;
+            box-shadow: 0 10px 26px -12px rgba(34, 211, 238, .9)
+        }
+
+        .btn-go:hover {
+            box-shadow: 0 14px 34px -12px rgba(34, 211, 238, 1);
+            color: #04121a
+        }
+
+        .btn-vi {
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: #0b0616;
+            border: none;
+            box-shadow: 0 10px 26px -12px rgba(167, 139, 250, .9)
+        }
+
+        .btn-gr {
+            background: linear-gradient(135deg, #059669, #34d399);
+            color: #04140e;
+            border: none;
+            box-shadow: 0 10px 26px -12px rgba(52, 211, 153, .9)
+        }
+
+        .btn-am {
+            background: linear-gradient(135deg, #d97706, #fbbf24);
+            color: #180f02;
+            border: none
+        }
+
+        .btn-rd {
+            background: rgba(251, 113, 133, .12);
+            border-color: rgba(251, 113, 133, .35);
+            color: #fda4af
+        }
+
+        .btn-rd:hover {
+            background: rgba(251, 113, 133, .2)
+        }
+
+        .btn.big {
+            padding: 14px 24px;
+            font-size: 14.5px;
+            border-radius: 14px
+        }
+
+        .btn.sm {
+            padding: 7px 11px;
+            font-size: 11.5px;
+            border-radius: 10px
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--line);
+            color: var(--mut)
+        }
+
+        .chip.cy {
+            color: var(--cy);
+            border-color: rgba(34, 211, 238, .3);
+            background: rgba(34, 211, 238, .1)
+        }
+
+        .chip.gr {
+            color: var(--gr);
+            border-color: rgba(52, 211, 153, .3);
+            background: rgba(52, 211, 153, .1)
+        }
+
+        .chip.am {
+            color: var(--am);
+            border-color: rgba(251, 191, 36, .3);
+            background: rgba(251, 191, 36, .1)
+        }
+
+        .chip.vi {
+            color: var(--vi);
+            border-color: rgba(167, 139, 250, .3);
+            background: rgba(167, 139, 250, .1)
+        }
+
+        .chip.rd {
+            color: var(--rd);
+            border-color: rgba(251, 113, 133, .3);
+            background: rgba(251, 113, 133, .1)
+        }
+
+        .bar {
+            height: 8px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .07);
+            overflow: hidden
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, var(--cy), var(--gr));
+            box-shadow: 0 0 12px rgba(52, 211, 153, .5);
+            transition: width .5s ease
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 130px;
+            background: rgba(0, 0, 0, .35);
+            border: 1px solid var(--line);
+            color: var(--txt);
+            padding: 12px;
+            border-radius: 12px;
+            font-family: 'Vazirmatn', 'Inter', sans-serif;
+            font-size: 13px;
+            line-height: 1.9;
+            resize: vertical;
+            transition: .18s
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: rgba(34, 211, 238, .5);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, .1)
+        }
+
+        textarea.ltr {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Inter', monospace
+        }
+
+        pre {
+            margin: 0;
+            background: rgba(0, 0, 0, .35);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            max-height: 280px;
+            overflow: auto;
+            font-size: 12px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #c3c8de
+        }
+
+        details.peek {
+            margin-top: 12px;
+            background: rgba(0, 0, 0, .18);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 12px
+        }
+
+        details.peek summary {
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--mut);
+            font-weight: 700;
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        details.peek[open] summary {
+            margin-bottom: 10px
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .muted {
+            color: var(--mut)
+        }
+
+        .dim {
+            color: var(--dim)
+        }
+
+        .small {
+            font-size: 11.5px
+        }
+
+        .kbd {
+            font-family: 'Inter', monospace;
+            font-size: 10px;
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid var(--line);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: var(--mut)
+        }
+
+        /* ---------- home ---------- */
+        .hero {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(120deg, #fff, #9ee9f7 40%, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .hero p {
+            margin: 4px 0 0;
+            color: var(--mut);
+            font-size: 12.5px;
+            max-width: 640px;
+            line-height: 1.8
+        }
+
+        .profiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px
+        }
+
+        .pcard {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            transition: .2s
+        }
+
+        .pcard:hover {
+            border-color: var(--line2);
+            background: rgba(255, 255, 255, .04)
+        }
+
+        .pcard .av {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            font-size: 15px;
+            font-weight: 900;
+            color: #0a0a12;
+            background: linear-gradient(135deg, #64748b, #94a3b8)
+        }
+
+        .pcard.on .av {
+            background: linear-gradient(135deg, var(--gr), #6ee7b7)
+        }
+
+        .pcard .info {
+            flex: 1;
+            min-width: 0
+        }
+
+        .pcard .info b {
+            display: block;
+            font-size: 13px
+        }
+
+        .pcard .info span {
+            font-size: 10.5px;
+            color: var(--dim);
+            direction: ltr;
+            display: inline-block
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4b5563;
+            flex: none
+        }
+
+        .dot.on {
+            background: var(--gr);
+            box-shadow: 0 0 10px var(--gr);
+            animation: pulse 1.8s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .45
+            }
+        }
+
+        .books {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+            gap: 12px
+        }
+
+        .book {
+            position: relative;
+            text-align: start;
+            cursor: pointer;
+            padding: 14px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(160deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015));
+            border: 1px solid var(--line);
+            transition: .22s
+        }
+
+        .book:hover {
+            transform: translateY(-4px);
+            border-color: rgba(34, 211, 238, .4);
+            box-shadow: 0 18px 40px -22px rgba(34, 211, 238, .8)
+        }
+
+        .book .top {
+            display: flex;
+            gap: 11px;
+            align-items: center;
+            margin-bottom: 11px
+        }
+
+        .book .cov {
+            width: 44px;
+            height: 56px;
+            border-radius: 9px;
+            flex: none;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            background: linear-gradient(150deg, rgba(34, 211, 238, .25), rgba(167, 139, 250, .25));
+            border: 1px solid var(--line2)
+        }
+
+        .book h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.5;
+            word-break: break-word
+        }
+
+        .book .foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 9px;
+            font-size: 11px;
+            color: var(--mut)
+        }
+
+        .empty {
+            padding: 34px;
+            text-align: center;
+            color: var(--dim);
+            border: 1px dashed var(--line2);
+            border-radius: 16px;
+            line-height: 2
+        }
+
+        /* ---------- map ---------- */
+        .mapgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+            gap: 10px
+        }
+
+        .tile {
+            position: relative;
+            cursor: pointer;
+            text-align: start;
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .035);
+            border: 1px solid var(--line);
+            transition: .2s;
+            overflow: hidden
+        }
+
+        .tile:hover {
+            transform: translateY(-3px);
+            border-color: var(--line2);
+            background: rgba(255, 255, 255, .06)
+        }
+
+        .tile .idx {
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--dim)
+        }
+
+        .tile .nm {
+            font-size: 12.5px;
+            font-weight: 700;
+            margin: 3px 0 9px;
+            line-height: 1.5;
+            max-height: 38px;
+            overflow: hidden;
+            word-break: break-word
+        }
+
+        .tile .pips {
+            display: flex;
+            gap: 4px
+        }
+
+        .pip {
+            width: 100%;
+            height: 5px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .09)
+        }
+
+        .pip.f1 {
+            background: var(--cy);
+            box-shadow: 0 0 8px rgba(34, 211, 238, .6)
+        }
+
+        .pip.f2 {
+            background: var(--vi);
+            box-shadow: 0 0 8px rgba(167, 139, 250, .6)
+        }
+
+        .pip.f3 {
+            background: var(--gr);
+            box-shadow: 0 0 8px rgba(52, 211, 153, .6)
+        }
+
+        .tile.done {
+            border-color: rgba(52, 211, 153, .35);
+            background: linear-gradient(160deg, rgba(52, 211, 153, .12), rgba(255, 255, 255, .02))
+        }
+
+        .tile.done .nm::after {
+            content: ' ✓';
+            color: var(--gr)
+        }
+
+        .tile.cur {
+            border-color: rgba(34, 211, 238, .55);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, .12)
+        }
+
+        .tile .flag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 800
+        }
+
+        /* ---------- work ---------- */
+        .workhead {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px
+        }
+
+        .workhead h2 {
+            margin: 3px 0 0;
+            font-size: 16px;
+            font-weight: 800
+        }
+
+        .tracker {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 16px;
+            padding: 12px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid var(--line);
+            overflow-x: auto
+        }
+
+        .node {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 130px
+        }
+
+        .node .cir {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 13px;
+            font-weight: 900;
+            flex: none;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--line);
+            color: var(--dim);
+            transition: .3s
+        }
+
+        .node .lb {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--dim);
+            white-space: nowrap
+        }
+
+        .node.done .cir {
+            background: linear-gradient(135deg, #059669, #34d399);
+            color: #04140e;
+            border-color: transparent
+        }
+
+        .node.done .lb {
+            color: var(--gr)
+        }
+
+        .node.cur .cir {
+            background: linear-gradient(135deg, var(--cy), var(--vi));
+            color: #06060b;
+            border-color: transparent;
+            box-shadow: 0 0 0 5px rgba(34, 211, 238, .14);
+            animation: bob 2s infinite
+        }
+
+        .node.cur .lb {
+            color: var(--txt)
+        }
+
+        @keyframes bob {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-3px)
+            }
+        }
+
+        .link-line {
+            height: 2px;
+            flex: 1;
+            min-width: 14px;
+            background: rgba(255, 255, 255, .08);
+            border-radius: 9px
+        }
+
+        .link-line.done {
+            background: linear-gradient(90deg, var(--gr), var(--cy))
+        }
+
+        .stage {
+            display: none
+        }
+
+        .stage.active {
+            display: block;
+            animation: fade .3s ease
+        }
+
+        .stage-head {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px
+        }
+
+        .stage-ico {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+            flex: none;
+            background: linear-gradient(150deg, rgba(34, 211, 238, .2), rgba(167, 139, 250, .2));
+            border: 1px solid var(--line2)
+        }
+
+        .stage-head h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 900
+        }
+
+        .stage-head p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: var(--mut);
+            line-height: 1.8
+        }
+
+        .stage-head .badge {
+            margin-inline-start: auto;
+            flex: none
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap;
+            margin-bottom: 6px
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px
+        }
+
+        @media(max-width:820px) {
+            .split {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .box {
+            background: rgba(0, 0, 0, .18);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px
+        }
+
+        .box h4 {
+            margin: 0 0 9px;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .box h4 .chip {
+            margin-inline-start: auto
+        }
+
+        .counter {
+            font-size: 10.5px;
+            color: var(--dim);
+            margin-top: 7px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .optline {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 10px 0 0;
+            font-size: 11.5px;
+            color: var(--mut);
+            cursor: pointer
+        }
+
+        .optline input {
+            accent-color: var(--cy);
+            width: 15px;
+            height: 15px
+        }
+
+        .actionbar {
+            position: sticky;
+            bottom: 0;
+            margin: 16px -16px -120px;
+            padding: 12px 16px;
+            z-index: 40;
+            background: linear-gradient(180deg, rgba(6, 6, 11, 0), rgba(6, 6, 11, .95) 40%);
+            border-top: 1px solid var(--line);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            backdrop-filter: blur(8px)
+        }
+
+        .actionbar .hint {
+            font-size: 11px;
+            color: var(--dim);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .actionbar .btn {
+            margin-inline-start: auto
+        }
+
+        .donebanner {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 14px;
+            border-radius: 14px;
+            margin-top: 12px;
+            background: linear-gradient(120deg, rgba(52, 211, 153, .16), rgba(34, 211, 238, .08));
+            border: 1px solid rgba(52, 211, 153, .35)
+        }
+
+        .donebanner b {
+            font-size: 14px
+        }
+
+        .donebanner p {
+            margin: 3px 0 0;
+            font-size: 11.5px;
+            color: var(--mut)
+        }
+
+        /* ---------- toast / modal ---------- */
+        #toasts {
+            position: fixed;
+            bottom: 18px;
+            inset-inline-start: 18px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .toast {
+            min-width: 230px;
+            max-width: 340px;
+            padding: 11px 14px;
+            border-radius: 13px;
+            font-size: 12.5px;
+            font-weight: 700;
+            background: #0f1120;
+            border: 1px solid var(--line2);
+            box-shadow: 0 20px 45px -18px #000;
+            animation: slidein .3s cubic-bezier(.2, .9, .2, 1)
+        }
+
+        .toast.ok {
+            border-color: rgba(52, 211, 153, .45);
+            color: #a7f3d0
+        }
+
+        .toast.info {
+            border-color: rgba(34, 211, 238, .45);
+            color: #a5f3fc
+        }
+
+        .toast.warn {
+            border-color: rgba(251, 191, 36, .45);
+            color: #fde68a
+        }
+
+        .toast.err {
+            border-color: rgba(251, 113, 133, .45);
+            color: #fecdd3
+        }
+
+        @keyframes slidein {
+            from {
+                opacity: 0;
+                transform: translateY(14px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1001;
+            background: rgba(3, 4, 9, .75);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px
+        }
+
+        .backdrop.on {
+            display: flex;
+            animation: fade .2s
+        }
+
+        .dialog {
+            width: min(520px, 100%);
+            background: linear-gradient(180deg, #151829, #0e1018);
+            border: 1px solid var(--line2);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: 0 40px 90px -30px #000
+        }
+
+        .dialog h3 {
+            margin: 0 0 10px;
+            font-size: 17px;
+            font-weight: 900
+        }
+
+        .dialog .body {
+            font-size: 13px;
+            color: var(--mut);
+            line-height: 2
+        }
+
+        .dialog .acts {
+            display: flex;
+            gap: 9px;
+            margin-top: 18px;
+            flex-wrap: wrap
+        }
+
+        .dialog .acts .btn {
+            flex: 1
+        }
+
+        .steps-help {
+            counter-reset: s;
+            margin: 10px 0 0;
+            padding: 0;
+            list-style: none
+        }
+
+        .steps-help li {
+            counter-increment: s;
+            position: relative;
+            padding: 8px 0 8px 0;
+            font-size: 12.5px;
+            color: var(--mut);
+            line-height: 1.9
+        }
+
+        .steps-help li::before {
+            content: counter(s);
+            position: absolute;
+            inset-inline-start: -4px;
+            top: 8px;
+            transform: translateX(100%);
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            display: grid;
+            place-items: center;
+            font-size: 11px;
+            font-weight: 900;
+            background: rgba(34, 211, 238, .14);
+            color: var(--cy);
+            border: 1px solid rgba(34, 211, 238, .3)
+        }
+
+        .steps-help li {
+            padding-inline-start: 34px
+        }
+
+        ::-webkit-scrollbar {
+            width: 9px;
+            height: 9px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .1);
+            border-radius: 9px
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, .2)
+        }
+
+        /* ================= FLAT THEME OVERRIDES (simple & focused) ================= */
+        :root {
+            --bg: #111318;
+            --bg2: #111318;
+            --panel: #181b22;
+            --panel2: #1e222c;
+            --panel3: #232936;
+            --line: #2a303d;
+            --line2: #363e4f;
+            --txt: #e7e9ee;
+            --mut: #a0a8b8;
+            --dim: #6d7688;
+            --cy: #5b9cf6;
+            --vi: #5b9cf6;
+            --am: #c9a13b;
+            --gr: #4caf7d;
+            --rd: #d16a75;
+            --glow-cy: none;
+            --r: 10px;
+        }
+
+        * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        body {
+            background: #111318 !important;
+            background-image: none !important;
+        }
+
+        body::before {
+            display: none !important;
+        }
+
+        #fx {
+            display: none !important;
+        }
+
+        .hud {
+            background: #14171e !important;
+            backdrop-filter: none !important;
+        }
+
+        .logo .mark {
+            background: #2a3344 !important;
+            color: #e7e9ee !important;
+        }
+
+        .logo small {
+            color: var(--dim);
+        }
+
+        .lv b {
+            background: #2a3344 !important;
+            color: var(--txt) !important;
+        }
+
+        .xpbar, .bar {
+            background: #262c38 !important;
+        }
+
+        .xpbar i, .bar i {
+            background: #5b9cf6 !important;
+        }
+
+        .card, .box, .pcard, .book, .tile, .tracker, details.peek, pre, textarea {
+            background-image: none !important;
+        }
+
+        .card {
+            background: #181b22 !important;
+        }
+
+        .box, details.peek {
+            background: #14171e !important;
+        }
+
+        pre, textarea {
+            background: #10131a !important;
+        }
+
+        .hero h1 {
+            background: none !important;
+            -webkit-background-clip: border-box !important;
+            background-clip: border-box !important;
+            -webkit-text-fill-color: currentColor !important;
+            color: var(--txt) !important;
+        }
+
+        .btn, .btn-go, .btn-vi, .btn-gr, .btn-am, .btn-rd {
+            background: #232936 !important;
+            background-image: none !important;
+            border: 1px solid var(--line2) !important;
+            color: var(--txt) !important;
+            transform: none !important;
+            transition: background .12s ease, border-color .12s ease !important;
+        }
+
+        .btn:hover {
+            background: #2b3242 !important;
+            border-color: #4a5468 !important;
+            transform: none !important;
+        }
+
+        .btn:active {
+            transform: none !important;
+        }
+
+        .btn-go, .btn-gr {
+            background: #2f6fed !important;
+            border-color: #2f6fed !important;
+            color: #fff !important;
+        }
+
+        .btn-go:hover, .btn-gr:hover {
+            background: #3b7bf5 !important;
+            border-color: #3b7bf5 !important;
+            color: #fff !important;
+        }
+
+        .btn-vi {
+            background: #232936 !important;
+            border-color: var(--line2) !important;
+            color: var(--txt) !important;
+        }
+
+        .btn-am {
+            background: #3a3220 !important;
+            border-color: #6b5c2e !important;
+            color: #e8cf8a !important;
+        }
+
+        .btn-rd {
+            background: #14171e !important;
+            border-color: #5a3338 !important;
+            color: #e0a0a8 !important;
+        }
+
+        .btn.big, .btn.sm {
+            transform: none !important;
+        }
+
+        .chip, .chip.cy, .chip.gr, .chip.am, .chip.vi, .chip.rd {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+            color: var(--mut) !important;
+        }
+
+        .book:hover, .tile:hover, .pcard:hover {
+            transform: none !important;
+            border-color: var(--line2) !important;
+            background: #1e222c !important;
+        }
+
+        .book .cov {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+        }
+
+        .pcard .av, .pcard.on .av {
+            background: #2a3344 !important;
+            color: var(--txt) !important;
+        }
+
+        .dot, .dot.on {
+            background: #4b5563 !important;
+            animation: none !important;
+        }
+
+        .dot.on {
+            background: #4caf7d !important;
+        }
+
+        .pip, .pip.f1, .pip.f2, .pip.f3 {
+            background: #2a303d !important;
+        }
+
+        .pip.f1, .pip.f2 {
+            background: #5b9cf6 !important;
+        }
+
+        .pip.f3 {
+            background: #4caf7d !important;
+        }
+
+        .tile.done {
+            background: #181b22 !important;
+            border-color: #33523f !important;
+        }
+
+        .tile.cur {
+            border-color: #5b9cf6 !important;
+        }
+
+        .node .cir {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+            color: var(--dim) !important;
+            animation: none !important;
+        }
+
+        .node.done .cir {
+            background: #2c4a3a !important;
+            border-color: #33523f !important;
+            color: #bfe6cf !important;
+        }
+
+        .node.cur .cir {
+            background: #2f6fed !important;
+            border-color: #2f6fed !important;
+            color: #fff !important;
+            animation: none !important;
+        }
+
+        .node.done .lb {
+            color: var(--mut) !important;
+        }
+
+        .node.cur .lb {
+            color: var(--txt) !important;
+        }
+
+        .link-line, .link-line.done {
+            background: #2a303d !important;
+        }
+
+        .stage-ico {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+        }
+
+        .sect-title .num {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+            color: var(--mut) !important;
+        }
+
+        .steps-help li::before {
+            background: #232936 !important;
+            border: 1px solid var(--line2) !important;
+            color: var(--mut) !important;
+        }
+
+        .donebanner {
+            background: #16211b !important;
+            border: 1px solid #33523f !important;
+        }
+
+        .toast {
+            background: #181b22 !important;
+            border: 1px solid var(--line2) !important;
+            animation: none !important;
+        }
+
+        .toast.ok, .toast.info, .toast.warn, .toast.err {
+            color: var(--txt) !important;
+            border-color: var(--line2) !important;
+        }
+
+        .dialog {
+            background: #181b22 !important;
+            border: 1px solid var(--line2) !important;
+        }
+
+        .backdrop {
+            background: rgba(0, 0, 0, .6) !important;
+            backdrop-filter: none !important;
+        }
+
+        .actionbar {
+            background: #14171e !important;
+            backdrop-filter: none !important;
+        }
+
+        .screen, .stage.active {
+            animation: none !important;
+        }
+
+        textarea:focus {
+            border-color: #5b9cf6 !important;
+        }
+
+        .optline input {
+            accent-color: #5b9cf6 !important;
+        }
+
+        .book {
+            font-family: inherit;
+            color: var(--txt);
+            text-align: start;
+        }
+
+        .book .act-open, .book .act-robot {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="fx"></canvas>
+
+    <div class="wrap">
+        <!-- ============ HUD ============ -->
+        <div class="hud">
+            <div class="logo" id="btnHome">
+                <div class="mark">📖</div>
+                <div>NovelQuest<small>مسیر ترجمهٔ وب‌ناول</small></div>
+            </div>
+            <div class="hud-stats">
+                <div class="lv" title="سطح و تجربه">
+                    <b id="hudLv">۱</b>
+                    <div>
+                        <div class="xpbar"><i id="hudXp" style="width:0%"></i></div>
+                        <div class="small dim" style="font-size:10px;margin-top:3px"><span id="hudXpTxt">۰ XP</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat">🏆 <b id="hudDone">۰</b> فصل تمام</div>
+                <div class="stat">🔥 کمبو <b id="hudCombo">۰</b></div>
+                <button class="iconbtn" id="btnSound" title="صدا">🔊</button>
+                <button class="iconbtn" id="btnHelp" title="راهنما">؟</button>
+            </div>
+        </div>
+
+        <!-- ============ HOME ============ -->
+        <section id="screen-home" class="screen active">
+            <div class="hero">
+                <div>
+                    <h1>به کارگاه ترجمه خوش آمدی</h1>
+                    <p>دو راه داری: <b>🤖 ربات خودکار</b> (دکمهٔ ربات روی هر کتاب) یا <b>مسیر دستی</b> (ترجمه ← ویرایش ← بازبینی ← ثبت).</p>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px">
+                <div class="sect-title">
+                    <div class="num">۰</div>
+                    <div>
+                        <h2>پروفایل‌های کروم</h2>
+                        <p>قبل از شروع، مرورگرهای کاری را باز کن (CDP آماده)</p>
+                    </div>
+                    <div class="side">
+                        <span class="chip" id="chromePathChip">در حال بررسی…</span>
+                        <button class="btn btn-go sm" id="btnLaunchAll">🚀 باز کردن هر سه</button>
+                    </div>
+                </div>
+                <div class="profiles" id="profiles"></div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px">
+                <div class="sect-title">
+                    <div class="num">🤖</div>
+                    <div>
+                        <h2>ربات مترجم</h2>
+                        <p>بدون باز کردن کتاب — مستقیم از اینجا در صف بگذار</p>
+                    </div>
+                    <div class="side">
+                        <span class="chip" id="robotChipHome">—</span>
+                        <button class="btn sm" id="btnRobotClearHome">✖ خالی کردن صف</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <button class="btn btn-go" id="btnRobotContinue">▶ ادامهٔ خودکار (آخرین کتاب)</button>
+                    <span class="small dim">افزونه NovelBot باید روشن باشد. وضعیت صف هر ۴ ثانیه بروز می‌شود.</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="sect-title">
+                    <div class="num">۱</div>
+                    <div>
+                        <h2>انتخاب کتاب</h2>
+                        <p>از پوشهٔ <span class="mono">books/</span> — برای شروع ربات، دکمهٔ 🤖 روی هر کتاب را بزن</p>
+                    </div>
+                    <div class="side">
+                        <span class="chip cy" id="totalChips">—</span>
+                        <button class="btn sm" id="btnReload">↻ بروزرسانی</button>
+                    </div>
+                </div>
+                <div class="books" id="books"></div>
+            </div>
+
+            <div class="card" style="margin-top:16px">
+                <div class="sect-title">
+                    <div class="num">🧾</div>
+                    <div>
+                        <h2>لاگ ربات</h2>
+                        <p>فایل کامل: <span class="mono" dir="ltr">logs/novelbot.log</span></p>
+                    </div>
+                    <div class="side">
+                        <select id="logSource"
+                            style="background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:7px 10px;border-radius:10px;font-size:11.5px">
+                            <option value="all">همه</option>
+                            <option value="server">server</option>
+                            <option value="background">background</option>
+                            <option value="content">content</option>
+                        </select>
+                        <input id="logSearch" placeholder="جستجو…"
+                            style="background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:7px 10px;border-radius:10px;font-size:11.5px;min-width:130px">
+                        <button class="btn sm" id="btnRefreshLogs">↻</button>
+                        <button class="btn sm btn-rd" id="btnClearLogs">پاک کردن</button>
+                    </div>
+                </div>
+                <pre id="logView" dir="ltr"
+                    style="height:260px;overflow:auto;white-space:pre-wrap;font-size:11px;line-height:1.7">loading...</pre>
+            </div>
+        </section>
+
+        <!-- ============ MAP ============ -->
+        <section id="screen-map" class="screen">
+            <div class="card" style="margin-bottom:14px">
+                <div class="row" style="justify-content:space-between">
+                    <div>
+                        <button class="btn sm" id="btnMapHome">→ خانه</button>
+                        <h2 style="margin:10px 0 4px;font-size:19px;font-weight:900" id="mapTitle">—</h2>
+                        <div class="row" id="mapChips"></div>
+                    </div>
+                    <div class="row">
+                        <button class="btn btn-go" id="btnResume">▶ ادامه از فصل ناتمام</button>
+                        <button class="btn btn-rd sm" id="btnResetBook">پاک کردن پیشرفت</button>
+                    </div>
+                </div>
+                <div class="bar" style="margin-top:14px"><i id="mapBar" style="width:0%"></i></div>
+                <div class="small dim" style="margin-top:7px" id="mapBarTxt">—</div>
+                <div class="row" style="margin-top:12px;border-top:1px dashed var(--line2);padding-top:12px">
+                    <button class="btn btn-vi" id="btnRobotAll">🤖 ربات: همهٔ ناتمام‌ها</button>
+                    <button class="btn" id="btnRobotNext">⚙ ربات: فصل بعدی</button>
+                    <button class="btn btn-rd sm" id="btnRobotClear">✖ خالی کردن صف</button>
+                    <span class="chip" id="robotChip">—</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="sect-title">
+                    <div class="num">۲</div>
+                    <div>
+                        <h2>نقشهٔ فصل‌ها</h2>
+                        <p>روی یک فصل کلیک کن تا وارد مراحل شوی</p>
+                    </div>
+                    <div class="side">
+                        <label class="optline" style="margin:0"><input type="checkbox" id="onlyUnfinished"> فقط
+                            ناتمام‌ها</label>
+                    </div>
+                </div>
+                <div class="mapgrid" id="mapGrid"></div>
+            </div>
+        </section>
+
+        <!-- ============ WORK ============ -->
+        <section id="screen-work" class="screen">
+            <div class="workhead">
+                <button class="btn sm" id="btnWorkMap">→ نقشهٔ فصل‌ها</button>
+                <div style="flex:1;min-width:200px">
+                    <span class="chip vi" id="workBook">—</span>
+                    <h2 id="workTitle">—</h2>
+                </div>
+                <button class="btn btn-vi sm" id="btnRobotThisChapter">🤖 سپردن این فصل به ربات</button>
+                <button class="btn btn-rd sm" id="btnResetCh" title="پاک کردن ترجمه و پیشرفت این فصل">↺ شروع مجدد</button>
+                <button class="btn sm" id="btnPrevCh">‹ فصل قبل</button>
+                <button class="btn sm" id="btnNextCh">فصل بعد ›</button>
+            </div>
+
+            <div class="tracker" id="tracker"></div>
+
+            <!-- STEP 0 : TRANSLATE -->
+            <div class="stage card" data-step="0">
+                <div class="stage-head">
+                    <div class="stage-ico">🌐</div>
+                    <div>
+                        <h3>مرحلهٔ ۱ — ترجمه</h3>
+                        <p>پرامپت ترجمه را کپی کن، بعد متن خام فصل را بفرست. وقتی خروجی AI آماده شد، «مرحلهٔ بعد» را
+                            بزن.</p>
+                    </div>
+                    <span class="chip badge" id="badge0">در انتظار</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-go" id="btnCopyTransPrompt">📋 کپی پرامپت ترجمه</button>
+                    <button class="btn" id="btnCopyRaw">📄 کپی متن خام</button>
+                    <button class="btn" id="btnCopyGloss">📚 کپی متن + واژه‌نامه</button>
+                </div>
+                <details class="peek">
+                    <summary>نمایش متن خام فصل <span class="chip" id="rawWc">—</span></summary>
+                    <pre dir="ltr" id="rawPreview" class="en"></pre>
+                </details>
+            </div>
+
+            <!-- STEP 1 : EDIT -->
+            <div class="stage card" data-step="1">
+                <div class="stage-head">
+                    <div class="stage-ico">✍️</div>
+                    <div>
+                        <h3>مرحلهٔ ۲ — ویرایش</h3>
+                        <p>پرامپت ویرایش را کپی کن، ترجمهٔ خام را به AI بده و نسخهٔ ویرایش‌شده را اینجا بچسبان.</p>
+                    </div>
+                    <span class="chip badge" id="badge1">در انتظار</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-vi" id="btnCopyEditPrompt">📋 کپی پرامپت ویرایش</button>
+                    <button class="btn" id="btnLoadTr">📥 بارگذاری و کپی ترجمهٔ آماده (tr)</button>
+                    <button class="btn" id="btnPasteIn">📎 چسباندن ترجمهٔ خام</button>
+                    <button class="btn btn-gr" id="btnPasteEdited">✅ چسباندن ترجمهٔ ویرایش‌شده</button>
+                </div>
+                <label class="optline"><input type="checkbox" id="optAppend" checked> متن ترجمهٔ ورودی همراه پرامپت
+                    ویرایش کپی شود</label>
+
+                <div class="split">
+                    <div class="box">
+                        <h4>📥 ترجمهٔ ورودی <span class="chip" id="trChip">—</span></h4>
+                        <textarea id="inTranslation" placeholder="ترجمهٔ خام (از AI یا پوشه tr)…"></textarea>
+                        <div class="counter"><span>واژه: <b id="inWc">۰</b></span></div>
+                    </div>
+                    <div class="box">
+                        <h4>✅ ترجمهٔ ویرایش‌شده <span class="chip gr" id="edChip">—</span></h4>
+                        <textarea id="editedText" placeholder="خروجی ویرایش‌شده را اینجا بچسبان…"></textarea>
+                        <div class="counter"><span>واژه: <b id="edWc">۰</b></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 : PROOF -->
+            <div class="stage card" data-step="2">
+                <div class="stage-head">
+                    <div class="stage-ico">🔍</div>
+                    <div>
+                        <h3>مرحلهٔ ۳ — بازبینی نهایی</h3>
+                        <p>پرامپت بازبینی + یک نسخهٔ فشرده از «متن انگلیسی و ترجمهٔ ویرایش‌شده» را کپی کن و خروجی
+                            نهایی را بچسبان.</p>
+                    </div>
+                    <span class="chip badge" id="badge2">در انتظار</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-am" id="btnCopyProofPrompt">📋 کپی پرامپت بازبینی</button>
+                    <button class="btn" id="btnCopyCombo">🗜️ کپی متن فشرده (EN + FA)</button>
+                    <button class="btn btn-gr" id="btnPasteFinal">✅ چسباندن متن نهایی</button>
+                </div>
+                <div class="box" style="margin-top:12px">
+                    <h4>🏁 متن بازبینی‌شدهٔ نهایی <span class="chip gr" id="finChip">—</span></h4>
+                    <textarea id="finalText" placeholder="نسخهٔ نهایی و بازبینی‌شده…"></textarea>
+                    <div class="counter"><span>واژه: <b id="finWc">۰</b></span><span class="dim" id="finHint"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3 : SAVE -->
+            <div class="stage card" data-step="3">
+                <div class="stage-head">
+                    <div class="stage-ico">💾</div>
+                    <div>
+                        <h3>مرحلهٔ ۴ — ثبت و پایان فصل</h3>
+                        <p>متن نهایی به JSON تبدیل و در <span class="mono">books/&lt;book&gt;/translated/</span>
+                            ذخیره می‌شود. با ذخیره، فصل <b>FINISHED</b> می‌شود.</p>
+                    </div>
+                    <span class="chip badge" id="badge3">در انتظار</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn" id="btnPullFinal">⬆ آوردن از مرحلهٔ قبل</button>
+                    <button class="btn btn-gr" id="btnPasteSave">📎 چسباندن متن نهایی</button>
+                </div>
+                <div class="box" style="margin-top:12px">
+                    <h4>📦 متن آمادهٔ ذخیره <span class="chip cy" id="saveChip">—</span></h4>
+                    <textarea id="saveText" placeholder="متن نهایی برای تبدیل به JSON…"></textarea>
+                    <div class="counter">
+                        <span>واژه: <b id="saveWc">۰</b></span>
+                        <span>پاراگراف: <b id="savePc">۰</b></span>
+                        <span id="saveValid" class="chip">—</span>
+                    </div>
+                </div>
+
+                <div id="doneBanner"></div>
+            </div>
+
+            <div class="actionbar">
+                <div class="hint">
+                    <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> مرحلهٔ بعد
+                    <span class="kbd">Alt</span>+<span class="kbd">۱/۲/۳</span> کپی پرامپت
+                </div>
+                <button class="btn btn-go big" id="btnNext">مرحلهٔ بعد ←</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="toasts"></div>
+
+    <div class="backdrop" id="backdrop">
+        <div class="dialog">
+            <h3 id="dlgTitle">—</h3>
+            <div class="body" id="dlgBody">—</div>
+            <div class="acts" id="dlgActs"></div>
+        </div>
+    </div>
+
+    <script>
+        /* ================= helpers ================= */
+        const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+        const FA = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        const fa = n => String(n ?? '').replace(/\d/g, d => FA[+d]);
+        const wc = t => (t || '').trim().split(/\s+/).filter(Boolean).length;
+        const pc = t => (t || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean).length;
+        const esc = s => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const enc = encodeURIComponent;
+
+        async function api(method, url, body) {
+            const opt = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opt.body = JSON.stringify(body);
+            const r = await fetch(url, opt);
+            let d = {}; try { d = await r.json(); } catch (e) { }
+            if (!r.ok) { const e = new Error(d.warning || d.error || ('HTTP ' + r.status)); e.data = d; e.status = r.status; throw e; }
+            return d;
+        }
+        const GET = (u) => api('GET', u), POST = (u, b) => api('POST', u, b || {});
+
+        /* toast */
+        function toast(msg, kind = 'ok', ms = 2600) {
+            const el = document.createElement('div'); el.className = 'toast ' + kind; el.textContent = msg;
+            $('#toasts').appendChild(el);
+            setTimeout(() => {
+                el.style.transition = '.3s'; el.style.opacity = '0'; el.style.transform = 'translateY(10px)';
+                setTimeout(() => el.remove(), 300);
+            }, ms);
+        }
+        /* modal */
+        function modal({ title, body = '', ok = 'تأیید', cancel = null, danger = false, html = false, onOk = null }) {
+            return new Promise(res => {
+                const bd = $('#backdrop'); $('#dlgTitle').textContent = title;
+                const b = $('#dlgBody'); if (html) b.innerHTML = body; else b.textContent = body;
+                const acts = $('#dlgActs'); acts.innerHTML = '';
+                const close = v => { bd.classList.remove('on'); document.removeEventListener('keydown', key); res(v); };
+                const key = e => { if (e.key === 'Escape') close(false); };
+                if (cancel) {
+                    const c = document.createElement('button'); c.className = 'btn'; c.textContent = cancel;
+                    c.onclick = () => close(false); acts.appendChild(c);
+                }
+                const o = document.createElement('button'); o.className = 'btn ' + (danger ? 'btn-rd' : 'btn-go'); o.textContent = ok;
+                o.onclick = async () => {
+                    if (onOk) {
+                        try { const r = await onOk(); if (r === false) return; }
+                        catch (e) { toast((e && e.message) || 'خطا', 'err'); return; }
+                    }
+                    close(true);
+                };
+                acts.appendChild(o);
+                bd.classList.add('on'); document.addEventListener('keydown', key); setTimeout(() => o.focus(), 50);
+            });
+        }
+        /* clipboard */
+        async function copyText(t, label = 'کپی شد') {
+            if (!t || !t.trim()) { toast('چیزی برای کپی وجود ندارد', 'warn'); return false; }
+            try { await navigator.clipboard.writeText(t); toast(label + ' 📋', 'ok'); beep(760, .06); return true; }
+            catch (e) {
+                const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); toast(label + ' 📋', 'ok'); return true; }
+                catch (_) { toast('کپی ناموفق بود', 'err'); return false; }
+                finally { ta.remove(); }
+            }
+        }
+        async function readClip() {
+            try { if (navigator.clipboard && navigator.clipboard.readText) return await navigator.clipboard.readText(); } catch (e) { }
+            return null;
+        }
+        async function pasteInto(sel, label) {
+            const ta = $(sel); const t = await readClip();
+            if (t === null) { ta.focus(); toast('دسترسی کلیپ‌بورد بسته است — داخل کادر Ctrl+V بزن', 'warn', 4000); return false; }
+            if (!t.trim()) { toast('کلیپ‌بورد خالی است', 'err'); return false; }
+            ta.value = t; ta.dispatchEvent(new Event('input')); ta.focus(); ta.scrollTop = 0;
+            toast(label, 'ok'); beep(560, .06); return true;
+        }
+        /* sound */
+        let actx = null;
+        function beep(f = 660, d = .07, type = 'sine', g = .045) {
+            if (!meta.sound) return;
+            try {
+                actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+                const o = actx.createOscillator(), gn = actx.createGain(); o.type = type; o.frequency.value = f; gn.gain.value = g;
+                o.connect(gn); gn.connect(actx.destination); o.start();
+                gn.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d); o.stop(actx.currentTime + d + .02);
+            } catch (e) { }
+        }
+        function fanfare() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .13, 'triangle', .06), i * 95)); }
+        /* confetti */
+        const fxc = $('#fx'), ctx = fxc.getContext('2d'); let parts = [], raf = null;
+        function sizeFx() { fxc.width = innerWidth; fxc.height = innerHeight; }
+        addEventListener('resize', sizeFx); sizeFx();
+        function burst(x, y, n = 110) {
+            const cols = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#ffffff'];
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2, s = 3 + Math.random() * 9;
+                parts.push({
+                    x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 3, g: .18 + Math.random() * .12,
+                    r: 2 + Math.random() * 4, c: cols[(Math.random() * cols.length) | 0], life: 70 + Math.random() * 50, rot: Math.random() * 6, vr: (Math.random() - .5) * .4
+                });
+            }
+            if (!raf) raf = requestAnimationFrame(tick);
+        }
+        function tick() {
+            ctx.clearRect(0, 0, fxc.width, fxc.height);
+            parts = parts.filter(p => p.life > 0 && p.y < fxc.height + 40);
+            parts.forEach(p => {
+                p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= .99; p.rot += p.vr; p.life--;
+                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 50));
+                ctx.fillStyle = p.c; ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); ctx.restore();
+            });
+            if (parts.length) raf = requestAnimationFrame(tick); else { raf = null; ctx.clearRect(0, 0, fxc.width, fxc.height); }
+        }
+
+        /* ================= meta / gamification ================= */
+        const META_KEY = 'novelquest_meta_v2';
+        let meta = Object.assign({ xp: 0, finished: 0, combo: 0, bestCombo: 0, today: '', todayCount: 0, sound: true },
+            JSON.parse(localStorage.getItem(META_KEY) || '{}'));
+        function saveMeta() { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+        const today = () => new Date().toISOString().slice(0, 10);
+        function bumpDay() { if (meta.today !== today()) { meta.today = today(); meta.todayCount = 0; } }
+        function addXp(n) {
+            meta.xp += n; const before = lvlOf(meta.xp - n).lv, after = lvlOf(meta.xp);
+            if (after.lv > before.lv) { fanfare(); toast('🎉 سطح ' + fa(after.lv) + ' شدی!', 'ok', 3500); burst(innerWidth / 2, 120, 160); }
+            saveMeta(); renderHud();
+        }
+        function lvlOf(xp) { const need = 300, lv = Math.floor(xp / need) + 1; return { lv, into: xp % need, need }; }
+        function renderHud() {
+            const L = lvlOf(meta.xp);
+            $('#hudLv').textContent = fa(L.lv);
+            $('#hudXp').style.width = (L.into / L.need * 100) + '%';
+            $('#hudXpTxt').textContent = fa(L.into) + ' / ' + fa(L.need) + ' XP';
+            $('#hudDone').textContent = fa(meta.finished);
+            $('#hudCombo').textContent = fa(meta.combo);
+            $('#btnSound').textContent = meta.sound ? '🔊' : '🔇';
+        }
+
+        /* ================= state ================= */
+        const S = { books: [], prompts: {}, profiles: [], chromePath: '', book: null, chapters: [], ch: null, step: 0, filter: false };
+        const STEP_NAMES = ['ترجمه', 'ویرایش', 'بازبینی', 'ثبت'];
+        const NEXT_LABELS = ['مرحلهٔ بعد: ویرایش ←', 'مرحلهٔ بعد: بازبینی ←', 'مرحلهٔ بعد: ثبت نهایی ←', '💾 ذخیره و پایان فصل'];
+
+        function show(name) {
+            $$('.screen').forEach(s => s.classList.remove('active'));
+            $('#screen-' + name).classList.add('active');
+            scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ================= HOME ================= */
+        async function loadBooks() {
+            const d = await GET('/api/books'); S.books = d.books || [];
+            let total = 0, done = 0;
+            const box = $('#books'); box.innerHTML = '';
+            if (!S.books.length) {
+                box.innerHTML = '<div class="empty" style="grid-column:1/-1">هیچ کتابی پیدا نشد.<br>پوشهٔ <span class="mono">books/&lt;book_name&gt;/</span> را بساز و فایل فصل‌ها (<span class="mono">.txt / .md / .docx</span>) را داخلش بگذار.</div>';
+            }
+            S.books.forEach(b => {
+                total += b.chapterCount; done += b.doneCount;
+                const p = b.chapterCount ? Math.round(b.doneCount / b.chapterCount * 100) : 0;
+                const el = document.createElement('div'); el.className = 'book';
+                el.innerHTML = `
+      <div class="top">
+        <div class="cov">📕</div>
+        <div style="flex:1;min-width:0">
+          <h3>${esc(b.name)}</h3>
+          <div class="row" style="gap:5px;margin-top:6px">
+            ${b.doneCount >= b.chapterCount && b.chapterCount > 0 ? '<span class="chip gr">تکمیل شده</span>' : ''}
+            ${b.trCount ? `<span class="chip vi">tr: ${fa(b.trCount)}</span>` : ''}
+            ${b.hasGlossary ? '<span class="chip am">واژه‌نامه</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div class="bar"><i style="width:${p}%"></i></div>
+      <div class="foot"><span>${fa(b.doneCount)} از ${fa(b.chapterCount)} فصل</span><span class="chip cy">${fa(p)}٪</span></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm btn-go act-open" style="flex:1">باز کردن نقشه</button>
+        <button class="btn sm act-robot" title="انتخاب فصل‌ها و سپردن به ربات">🤖 ربات</button>
+      </div>`;
+                el.querySelector('.act-open').onclick = (e) => { e.stopPropagation(); openBook(b.name); };
+                el.querySelector('.act-robot').onclick = (e) => { e.stopPropagation(); queueWholeBook(b.name); };
+                el.style.cursor = 'default';
+                box.appendChild(el);
+            });
+            $('#totalChips').textContent = `${fa(done)} / ${fa(total)} فصل تمام شده`;
+        }
+
+        async function loadChrome() {
+            try {
+                const d = await GET('/api/chrome/status');
+                S.profiles = d.profiles || []; S.chromePath = d.chromePath || '';
+                $('#chromePathChip').textContent = S.chromePath ? ('کروم: ' + S.chromePath.split(/[\\/]/).pop()) : 'کروم پیدا نشد ⚠';
+                $('#chromePathChip').className = 'chip ' + (S.chromePath ? 'gr' : 'rd');
+                const box = $('#profiles'); box.innerHTML = '';
+                S.profiles.forEach(p => {
+                    const el = document.createElement('div'); el.className = 'pcard' + (p.online ? ' on' : '');
+                    el.innerHTML = `
+        <div class="av">${p.online ? '🟢' : '👤'}</div>
+        <div class="info"><b>${esc(p.name)}</b><span>port ${p.port} • ${esc(p.dir)}</span></div>
+        <span class="dot ${p.online ? 'on' : ''}"></span>
+        <button class="btn sm">${p.online ? 'باز شد ✓' : 'باز کردن'}</button>`;
+                    el.querySelector('button').onclick = async () => {
+                        toast('در حال باز کردن ' + p.name + '…', 'info');
+                        try { const r = await POST('/api/chrome/launch', { name: p.name }); toast(r.message || 'باز شد', 'ok'); setTimeout(loadChrome, 1800); }
+                        catch (e) { toast(e.message, 'err', 4000); }
+                    };
+                    box.appendChild(el);
+                });
+            } catch (e) { $('#chromePathChip').textContent = 'خطا در ارتباط با سرور'; }
+        }
+
+        /* ================= MAP ================= */
+        async function openBook(name) {
+            toast('در حال بارگذاری کتاب…', 'info', 1400);
+            const d = await GET('/api/books/' + enc(name));
+            S.book = d.book; S.chapters = d.chapters || [];
+            try { localStorage.setItem('novelquest_last_book', S.book); } catch (e) { }
+            $('#mapTitle').textContent = S.book;
+            renderMap();
+            show('map');
+        }
+        function renderMap() {
+            const done = S.chapters.filter(c => c.done).length, total = S.chapters.length;
+            const p = total ? Math.round(done / total * 100) : 0;
+            $('#mapBar').style.width = p + '%';
+            $('#mapBarTxt').textContent = `${fa(done)} از ${fa(total)} فصل FINISHED • ${fa(p)}٪ پیشرفت کتاب`;
+            const firstUndone = S.chapters.findIndex(c => !c.done);
+            $('#mapChips').innerHTML =
+                `<span class="chip cy">بعدی: ${firstUndone < 0 ? '—' : esc(S.chapters[firstUndone].name)}</span>` +
+                (S.chapters.some(c => c.hasTr) ? `<span class="chip vi">tr آماده: ${fa(S.chapters.filter(c => c.hasTr).length)}</span>` : '') +
+                `<span class="chip">واژه‌نامه: ${S.chapters.some(c => c.glossary) ? 'دارد' : 'ندارد'}</span>`;
+            const grid = $('#mapGrid'); grid.innerHTML = '';
+            S.chapters.forEach((c, i) => {
+                if (S.filter && c.done) return;
+                const t = document.createElement('button');
+                t.className = 'tile' + (c.done ? ' done' : '') + (i === firstUndone ? ' cur' : '');
+                const st = [c.step >= 1, c.step >= 2, c.step >= 3 || c.done];
+                t.innerHTML = `
+      <div class="idx">فصل ${fa(i + 1)}</div>
+      <div class="nm">${esc(c.name)}</div>
+      <div class="pips">${st.map((f, k) => `<span class="pip ${f ? 'f' + (k + 1) : ''}"></span>`).join('')}</div>
+      ${c.done ? '<span class="flag chip gr">FINISHED</span>' : (c.step > 0 ? `<span class="flag chip am">${esc(STEP_NAMES[c.step])}</span>` : (c.hasTr ? '<span class="flag chip vi">tr</span>' : ''))}`;
+                t.onclick = () => openChapter(i);
+                grid.appendChild(t);
+            });
+            if (!grid.children.length) grid.innerHTML = '<div class="empty" style="grid-column:1/-1">فصلی یافت نشد.</div>';
+        }
+        function resume() {
+            const i = S.chapters.findIndex(c => !c.done);
+            if (i < 0) { toast('همهٔ فصل‌ها تمام شده‌اند 🏆', 'ok'); return; }
+            openChapter(i);
+        }
+
+        /* ================= WORK ================= */
+        async function openChapter(idx) {
+            if (idx < 0 || idx >= S.chapters.length) { toast('فصلی وجود ندارد', 'warn'); return; }
+            S.idx = idx;
+            const c = S.chapters[idx];
+            const d = await GET(`/api/books/${enc(S.book)}/chapter/${enc(c.file)}/data`);
+            S.ch = d;
+            $('#workBook').textContent = S.book;
+            $('#workTitle').textContent = d.name;
+            $('#rawPreview').textContent = d.rawText || '(خالی)';
+            $('#rawWc').textContent = fa(d.rawWords) + ' واژه';
+            $('#btnCopyGloss').style.display = d.glossaryCount > 0 ? '' : 'none';
+            $('#btnCopyGloss').innerHTML = `📚 کپی متن + واژه‌نامه (${fa(d.glossaryCount)})`;
+            $('#btnLoadTr').style.display = d.tr.exists ? '' : 'none';
+            $('#btnLoadTr').innerHTML = '📥 بارگذاری و کپی ترجمهٔ آماده (' + esc(d.tr.file || 'tr') + ')';
+            $('#trChip').textContent = d.tr.exists ? 'آماده در tr' : '—';
+            $('#trChip').className = 'chip ' + (d.tr.exists ? 'vi' : '');
+            $('#inTranslation').value = d.texts.inputTranslation || (d.tr.exists ? d.tr.text : '') || '';
+            $('#editedText').value = d.texts.editedText || '';
+            $('#finalText').value = d.texts.finalText || '';
+            $('#saveText').value = d.texts.saveText || d.texts.finalText || d.texts.editedText || '';
+            $$('#screen-work textarea').forEach(t => t.dispatchEvent(new Event('input')));
+            goStep(d.done ? 3 : Math.min(d.step || 0, 3), true);
+            if (d.done) renderDone(true);
+            else $('#doneBanner').innerHTML = '';
+            show('work');
+        }
+        function renderTracker() {
+            const tr = $('#tracker'); tr.innerHTML = '';
+            const icons = ['🌐', '✍️', '🔍', '💾'];
+            for (let i = 0; i < 4; i++) {
+                if (i) { const l = document.createElement('div'); l.className = 'link-line' + (S.step >= i ? ' done' : ''); tr.appendChild(l); }
+                const n = document.createElement('div');
+                const done = S.step > i || (S.ch && S.ch.done && i === 3);
+                n.className = 'node' + (done ? ' done' : '') + (S.step === i ? ' cur' : '');
+                n.innerHTML = `<div class="cir">${done ? '✓' : icons[i]}</div><div class="lb">${STEP_NAMES[i]}</div>`;
+                n.style.cursor = 'pointer'; n.onclick = () => { if (i <= Math.max(S.step, (S.ch ? S.ch.step : 0))) goStep(i); };
+                tr.appendChild(n);
+            }
+            for (let i = 0; i < 4; i++) {
+                const b = $('#badge' + i); if (!b) continue;
+                const done = S.step > i || (S.ch && S.ch.done && i === 3);
+                b.textContent = done ? '✓ انجام شد' : (S.step === i ? 'در جریان' : 'در انتظار');
+                b.className = 'chip badge ' + (done ? 'gr' : (S.step === i ? 'cy' : ''));
+            }
+        }
+        function goStep(i, silent) {
+            S.step = i;
+            $$('.stage').forEach(s => s.classList.toggle('active', +s.dataset.step === i));
+            const btn = $('#btnNext');
+            btn.className = 'btn big ' + (i === 3 ? 'btn-gr' : 'btn-go');
+            btn.textContent = (S.ch && S.ch.done) ? 'فصل بعد ←' : NEXT_LABELS[i];
+            renderTracker();
+            if (!silent) scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        async function saveProgress(step) {
+            if (!S.ch) return;
+            try {
+                await POST(`/api/books/${enc(S.book)}/chapter/${enc(S.ch.file)}/progress`, {
+                    step,
+                    texts: {
+                        inputTranslation: $('#inTranslation').value,
+                        editedText: $('#editedText').value,
+                        finalText: $('#finalText').value,
+                        saveText: $('#saveText').value
+                    }
+                });
+                S.ch.step = Math.max(S.ch.step || 0, step);
+                const c = S.chapters[S.idx]; if (c) c.step = S.ch.step;
+            } catch (e) { toast('ذخیرهٔ پیشرفت ناموفق: ' + e.message, 'err'); }
+        }
+        let deb = null;
+        function autosave() { clearTimeout(deb); deb = setTimeout(() => saveProgress(S.step), 1600); }
+
+        async function nextStep() {
+            if (!S.ch) return;
+            if (S.ch.done) { return gotoNextChapter(); }
+            if (S.step === 0) {
+                await saveProgress(1); addXp(12); beep(700, .08);
+                toast('+۱۲ XP — ترجمه انجام شد ✍️', 'ok'); goStep(1);
+            } else if (S.step === 1) {
+                const v = $('#editedText').value.trim();
+                if (!v) {
+                    const ok = await modal({ title: 'متن ویرایش‌شده خالی است', body: 'بدون متن ویرایش‌شده به مرحلهٔ بازبینی بروی؟', ok: 'ادامه', cancel: 'برمی‌گردم' });
+                    if (!ok) return;
+                }
+                await saveProgress(2); addXp(18); beep(880, .08);
+                toast('+۱۸ XP — ویرایش ثبت شد', 'ok'); goStep(2);
+            } else if (S.step === 2) {
+                let v = $('#finalText').value.trim();
+                if (!v) {
+                    const fallback = $('#editedText').value.trim();
+                    if (fallback) {
+                        $('#finalText').value = fallback; $('#finalText').dispatchEvent(new Event('input')); v = fallback;
+                        toast('متن ویرایش‌شده به‌عنوان نهایی در نظر گرفته شد', 'info');
+                    }
+                    else {
+                        const ok = await modal({ title: 'متن نهایی خالی است', body: 'بدون متن بازبینی‌شده به مرحلهٔ ثبت بروی؟', ok: 'ادامه', cancel: 'برمی‌گردم' });
+                        if (!ok) return;
+                    }
+                }
+                await saveProgress(3); addXp(18); beep(990, .09);
+                toast('+۱۸ XP — بازبینی ثبت شد', 'ok'); goStep(3);
+            } else if (S.step === 3) {
+                await finishChapter();
+            }
+        }
+        async function finishChapter() {
+            let text = $('#saveText').value.trim() || $('#finalText').value.trim() || $('#editedText').value.trim();
+            if (!text) { toast('متنی برای ذخیره وجود ندارد', 'err'); return; }
+            $('#saveText').value = text; $('#saveText').dispatchEvent(new Event('input'));
+            const send = force => POST(`/api/books/${enc(S.book)}/chapter/${enc(S.ch.file)}/save`, { text, force });
+            try {
+                const r = await send(false);
+                await onSaved(r);
+            } catch (e) {
+                if (e.status === 409 || e.data && e.data.warning) {
+                    const ok = await modal({ title: '⚠️ کنترل طول متن', body: e.message, ok: 'به‌هرحال ذخیره کن', cancel: 'بررسی می‌کنم', danger: true });
+                    if (!ok) return;
+                    try { await onSaved(await send(true)); } catch (e2) { toast(e2.message, 'err'); }
+                } else toast(e.message, 'err');
+            }
+        }
+        async function onSaved(r) {
+            S.ch.done = true; S.ch.step = 4; S.chapters[S.idx].done = true; S.chapters[S.idx].step = 4;
+            bumpDay(); meta.todayCount++; meta.combo++; meta.finished++;
+            meta.bestCombo = Math.max(meta.bestCombo, meta.combo); saveMeta();
+            addXp(60 + Math.min(meta.combo, 10) * 4);
+            fanfare();
+            const rect = $('#btnNext').getBoundingClientRect(); burst(rect.left + rect.width / 2, rect.top, 170);
+            renderDone(false, r); renderTracker();
+            $('#btnNext').textContent = 'فصل بعد ←';
+            toast('🏁 فصل FINISHED شد! +XP', 'ok', 3500);
+            await saveProgress(4);
+        }
+        function renderDone(already, r) {
+            $('#doneBanner').innerHTML = `<div class="donebanner">
+    <div style="font-size:26px">🏆</div>
+    <div><b>فصل با موفقیت ثبت شد</b>
+    <p class="mono" style="direction:ltr;text-align:left">${esc((r && r.path) || 'books/' + S.book + '/translated/' + S.ch.name + '.json')}</p>
+    ${r ? `<p>${fa(r.paragraphs)} پاراگراف • ${fa(r.words)} واژه • ${fa(r.percent)}٪ طول متن اصلی</p>` : ''}
+    ${already ? '<p>این فصل قبلاً FINISHED شده — می‌توانی دوباره ذخیره‌اش کنی.</p>' : ''}</div></div>`;
+        }
+        function gotoNextChapter() {
+            let n = S.idx + 1;
+            while (n < S.chapters.length && S.chapters[n].done) n++;
+            if (n >= S.chapters.length) n = S.idx + 1;
+            if (n >= S.chapters.length) { toast('همهٔ فصل‌ها تمام شد 🏆', 'ok'); show('map'); renderMap(); return; }
+            openChapter(n);
+        }
+
+        /* ---- copy actions ---- */
+        async function copyPrompt(kind, extra) {
+            const p = S.prompts[kind] || '';
+            if (!p) { toast('پرامپت یافت نشد (prompts/formal.txt)', 'err'); return; }
+            await copyText(extra ? (p + '\n\n' + extra) : p, 'پرامپت ' + kind);
+        }
+        async function buildEditPrompt() {
+            const p = S.prompts.editorial || '';
+            const src = $('#inTranslation').value.trim();
+            if ($('#optAppend').checked && src) return p + '\n\nترجمهٔ نیازمند ویرایش:\n' + src;
+            return p;
+        }
+
+        /* ================= wiring ================= */
+        $('#btnHome').onclick = () => { show('home'); loadChrome(); };
+        $('#btnMapHome').onclick = () => { show('home'); loadBooks(); loadChrome(); };
+        $('#btnWorkMap').onclick = async () => { await saveProgress(S.step); renderMap(); show('map'); };
+        $('#btnReload').onclick = () => { loadBooks(); loadChrome(); toast('بروز شد', 'info', 1200); };
+        $('#btnLaunchAll').onclick = async () => {
+            $('#btnLaunchAll').disabled = true; toast('در حال باز کردن هر سه پروفایل…', 'info');
+            try { const r = await POST('/api/chrome/launch', {}); toast(r.message || 'باز شد', 'ok'); }
+            catch (e) { toast(e.message, 'err', 4000); }
+            setTimeout(() => { $('#btnLaunchAll').disabled = false; loadChrome(); }, 2200);
+        };
+        $('#btnResume').onclick = resume;
+        $('#onlyUnfinished').onchange = e => { S.filter = e.target.checked; renderMap(); };
+        $('#btnResetBook').onclick = async () => {
+            const ok = await modal({ title: 'پاک کردن پیشرفت کتاب', body: 'همهٔ فایل‌های JSON پوشهٔ translated و وضعیت مراحل حذف می‌شوند. مطمئنی؟ (فایل‌های اصلی و tr دست‌نخورده می‌مانند)', ok: 'بله، پاک کن', cancel: 'بی‌خیال', danger: true });
+            if (!ok) return;
+            try { await POST('/api/books/' + enc(S.book) + '/reset'); toast('پیشرفت پاک شد', 'ok'); openBook(S.book); }
+            catch (e) { toast(e.message, 'err'); }
+        };
+        $('#btnPrevCh').onclick = () => { if (S.idx > 0) openChapter(S.idx - 1); };
+        $('#btnNextCh').onclick = () => { if (S.idx < S.chapters.length - 1) openChapter(S.idx + 1); };
+        $('#btnResetCh').onclick = async () => {
+            if (!S.ch || !S.book) return;
+            const ok = await modal({ title: 'شروع مجدد این فصل', body: 'ترجمهٔ ذخیره‌شده و پیشرفت «' + S.ch.name + '» پاک می‌شود و فصل از مرحلهٔ ترجمه شروع می‌شود. (فایل اصلی دست‌نخورده می‌ماند)', ok: 'بله، پاک کن', cancel: 'بی‌خیال', danger: true });
+            if (!ok) return;
+            try {
+                await POST(`/api/books/${enc(S.book)}/chapter/${enc(S.ch.file)}/reset`);
+                const c = S.chapters[S.idx]; if (c) { c.done = false; c.step = 0; }
+                toast('فصل ریست شد — از اول شروع کن', 'warn');
+                openChapter(S.idx);
+            } catch (e) { toast(e.message, 'err'); }
+        };
+        $('#btnNext').onclick = nextStep;
+        $('#btnSound').onclick = () => { meta.sound = !meta.sound; saveMeta(); renderHud(); beep(700, .06); };
+        $('#btnHelp').onclick = showHelp;
+
+        /* step 1 */
+        $('#btnCopyTransPrompt').onclick = () => copyPrompt('translation');
+        $('#btnCopyRaw').onclick = () => copyText(S.ch && S.ch.rawText, 'متن خام فصل');
+        $('#btnCopyGloss').onclick = async () => {
+            try {
+                const d = await GET(`/api/books/${enc(S.book)}/chapter/${enc(S.ch.file)}/with-glossary`);
+                await copyText(d.formattedText, 'متن + واژه‌نامه');
+            }
+            catch (e) { toast(e.message, 'err'); }
+        };
+        /* step 2 */
+        $('#btnCopyEditPrompt').onclick = async () => copyText(await buildEditPrompt(), 'پرامپت ویرایش');
+        $('#btnLoadTr').onclick = async () => {
+            if (!S.ch.tr.exists) { toast('پوشهٔ tr برای این فصل خالی است', 'warn'); return; }
+            $('#inTranslation').value = S.ch.tr.text; $('#inTranslation').dispatchEvent(new Event('input'));
+            await copyText(S.ch.tr.text, 'ترجمهٔ آماده (tr)');
+            toast('حالا پرامپت ویرایش را در AI بچسبان', 'info', 3500);
+        };
+        $('#btnPasteIn').onclick = () => pasteInto('#inTranslation', 'ترجمهٔ خام چسبانده شد');
+        $('#btnPasteEdited').onclick = () => pasteInto('#editedText', 'ترجمهٔ ویرایش‌شده چسبانده شد');
+        /* step 3 */
+        $('#btnCopyProofPrompt').onclick = () => copyPrompt('proofing');
+        $('#btnCopyCombo').onclick = async () => {
+            const faText = $('#finalText').value.trim() || $('#editedText').value.trim();
+            if (!faText) { toast('اول ترجمهٔ ویرایش‌شده را بچسبان', 'warn'); return; }
+            toast('در حال فشرده‌سازی…', 'info', 1200);
+            try {
+                const d = await POST('/api/compact', { english: S.ch.rawText, persian: faText });
+                await copyText(d.text, 'متن فشردهٔ EN+FA');
+            }
+            catch (e) { toast(e.message, 'err'); }
+        };
+        $('#btnPasteFinal').onclick = () => pasteInto('#finalText', 'متن نهایی چسبانده شد');
+        /* step 4 */
+        $('#btnPullFinal').onclick = () => {
+            const v = $('#finalText').value.trim() || $('#editedText').value.trim();
+            if (!v) { toast('متنی در مراحل قبل نیست', 'warn'); return; }
+            $('#saveText').value = v; $('#saveText').dispatchEvent(new Event('input')); toast('از مرحلهٔ قبل آورده شد', 'ok');
+        };
+        $('#btnPasteSave').onclick = () => pasteInto('#saveText', 'متن نهایی چسبانده شد');
+
+        /* counters */
+        const bindCount = (sel, out, fn) => { const t = $(sel); t.addEventListener('input', () => { $(out).textContent = fa(fn(t.value)); autosave(); }); };
+        bindCount('#inTranslation', '#inWc', wc);
+        bindCount('#editedText', '#edWc', wc);
+        bindCount('#finalText', '#finWc', wc);
+        $('#saveText').addEventListener('input', () => {
+            const t = $('#saveText').value;
+            $('#saveWc').textContent = fa(wc(t)); $('#savePc').textContent = fa(pc(t));
+            const raw = S.ch ? S.ch.rawWords : 0, w = wc(t), p = raw ? Math.round(w / raw * 100) : 0;
+            const v = $('#saveValid');
+            if (!raw || !w) { v.textContent = '—'; v.className = 'chip'; }
+            else if (p >= 80) { v.textContent = '✓ ' + fa(p) + '٪ طول متن اصلی'; v.className = 'chip gr'; }
+            else { v.textContent = '⚠ ' + fa(p) + '٪ (زیر ۸۰٪)'; v.className = 'chip rd'; }
+            autosave();
+        });
+        $('#editedText').addEventListener('input', () => {
+            const w = wc($('#editedText').value); $('#edChip').textContent = w ? fa(w) + ' واژه' : '—';
+        });
+        $('#finalText').addEventListener('input', () => {
+            const w = wc($('#finalText').value); $('#finChip').textContent = w ? fa(w) + ' واژه' : '—';
+            const raw = S.ch ? S.ch.rawWords : 0;
+            $('#finHint').textContent = raw ? (`متن اصلی: ${fa(raw)} واژه • نسبت: ${fa(Math.round(w / raw * 100))}٪`) : '';
+        });
+
+        /* shortcuts */
+        addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if ($('#screen-work').classList.contains('active')) nextStep(); }
+            if (e.altKey && $('#screen-work').classList.contains('active')) {
+                if (e.key === '1') { e.preventDefault(); copyPrompt('translation'); }
+                if (e.key === '2') { e.preventDefault(); copyText(buildEditPromptSync(), 'پرامپت ویرایش'); }
+                if (e.key === '3') { e.preventDefault(); $('#btnCopyProofPrompt').click(); }
+            }
+        });
+        function buildEditPromptSync() {
+            const p = S.prompts.editorial || '', src = $('#inTranslation').value.trim();
+            return ($('#optAppend').checked && src) ? p + '\n\nترجمهٔ نیازمند ویرایش:\n' + src : p;
+        }
+        /* ===================== ROBOT UI ===================== */
+        async function queueWholeBook(bookName, ask = true) {
+            let list;
+            try {
+                const d = await GET('/api/books/' + enc(bookName));
+                list = (d.chapters || []).filter(c => !c.done);
+                if (!list.length) { toast('این کتاب فصل ناتمامی ندارد 🏆', 'ok'); return; }
+            } catch (e) { toast(e.message, 'err'); return; }
+
+            let targets = list;
+            if (ask) {
+                const picked = await pickChaptersModal(bookName, list);
+                if (!picked) return; // user cancelled
+                targets = picked;
+            }
+
+            toast('در حال صف کردن ' + fa(targets.length) + ' فصل…', 'info', 1500);
+            let queued = 0, saved = 0, skipped = 0, failed = 0;
+            for (const c of targets) {
+                try {
+                    const r = await POST('/api/robot/queue', { book: bookName, chapter: c.file, autoChain: true });
+                    if (r.queued) queued++; else if (r.saved) saved++; else skipped++;
+                } catch (e) { failed++; }
+            }
+            toast(`🤖 «${bookName}»: ${fa(queued)} در صف` + (saved ? ` • ${fa(saved)} ذخیره` : '') + (failed ? ` • ${fa(failed)} خطا` : ''), queued ? 'ok' : 'warn', 4000);
+            if (typeof refreshRobotChipGlobal === 'function') refreshRobotChipGlobal();
+        }
+
+        /* chapter picker: returns selected chapters, or null if cancelled */
+        async function pickChaptersModal(bookName, chapters) {
+            const rows = chapters.map((c, i) => {
+                const st = c.done ? '✓' : (c.step > 0 ? STEP_NAMES[c.step] : 'جدید');
+                return `<label class="optline pick-row" style="margin:0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer">` +
+                    `<input type="checkbox" data-file="${esc(c.file)}" checked> ` +
+                    `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fa(i + 1)} — ${esc(c.name)}</span> ` +
+                    `<span class="chip">${esc(st)}</span></label>`;
+            }).join('');
+
+            const bodyHtml =
+                `<div class="row" style="margin-bottom:10px">` +
+                `<label class="optline" style="margin:0"><input type="checkbox" id="pickAll" checked> همه (${fa(chapters.length)})</label>` +
+                `<span class="small dim" id="pickCount" style="margin-inline-start:auto"></span></div>` +
+                `<div id="pickList" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:6px">` + rows + `</div>`;
+
+            const selCount = () => document.querySelectorAll('#pickList input[type=checkbox]:checked').length;
+            const paintCount = () => {
+                const n = selCount(), o = document.querySelector('#dlgActs .btn-go');
+                const pc = $('#pickCount');
+                if (pc) pc.textContent = fa(n) + ' انتخاب شده';
+                if (o) o.textContent = 'در صف گذاشتن (' + fa(n) + ')';
+            };
+
+            const p = modal({
+                title: '🤖 انتخاب فصل‌ها — ' + bookName,
+                body: bodyHtml, html: true,
+                ok: 'در صف گذاشتن (' + fa(chapters.length) + ')',
+                cancel: 'بی‌خیال',
+                onOk: () => {
+                    if (!selCount()) { toast('هیچ فصلی انتخاب نشده', 'warn'); return false; }
+                    return true;
+                }
+            });
+
+            // wire the checkboxes (dialog body is already in the DOM here)
+            const pickAll = $('#pickAll');
+            const list = $('#pickList');
+            if (list) list.onchange = () => {
+                if (pickAll) pickAll.checked = selCount() === chapters.length;
+                paintCount();
+            };
+            if (pickAll) pickAll.onchange = () => {
+                list.querySelectorAll('input[type=checkbox]').forEach(x => { x.checked = pickAll.checked; });
+                paintCount();
+            };
+            paintCount();
+
+            const oked = await p;
+            if (!oked) return null;
+            const files = new Set(Array.from(document.querySelectorAll('#pickList input[type=checkbox]:checked')).map(x => x.getAttribute('data-file')));
+            return chapters.filter(c => files.has(c.file));
+        }
+
+        let refreshRobotChipGlobal = null;
+        (function () {
+            const robotChip = $('#robotChip');
+            const robotChipHome = $('#robotChipHome');
+            const btnRobotAll = $('#btnRobotAll');
+            const btnRobotNext = $('#btnRobotNext');
+            const btnRobotClear = $('#btnRobotClear');
+            const btnRobotClearHome = $('#btnRobotClearHome');
+            const btnRobotContinue = $('#btnRobotContinue');
+            const btnRobotThisChapter = $('#btnRobotThisChapter');
+
+            async function refreshRobotChip() {
+                try {
+                    const r = await GET('/api/robot/status');
+                    const active = (r.active || []).length;
+                    const txt = (r.queueSize || active)
+                        ? `صف: ${fa(r.queueSize)} • فعال: ${fa(active)}`
+                        : 'ربات آماده';
+                    if (robotChip) robotChip.textContent = txt;
+                    if (robotChipHome) robotChipHome.textContent = txt;
+                } catch (e) {
+                    if (robotChip) robotChip.textContent = 'ربات آفلاین';
+                    if (robotChipHome) robotChipHome.textContent = 'ربات آفلاین';
+                }
+            }
+            refreshRobotChipGlobal = refreshRobotChip;
+
+            async function queueRobotChapter(chapter) {
+                return POST('/api/robot/queue', {
+                    book: S.book,
+                    chapter: chapter.file,
+                    autoChain: true
+                });
+            }
+
+            if (btnRobotNext) {
+                btnRobotNext.onclick = async () => {
+                    if (!S.book || !S.chapters) return;
+                    const c = S.chapters.find(x => !x.done);
+                    if (!c) {
+                        toast('همهٔ فصل‌ها تمام شده‌اند 🏆', 'ok');
+                        return;
+                    }
+
+                    try {
+                        const r = await queueRobotChapter(c);
+                        if (r.saved) toast('🤖 فصل ذخیره شد', 'ok');
+                        else if (r.skipped) toast('🤖 رد شد: ' + r.reason, 'warn');
+                        else toast('🤖 فصل «' + c.name + '» در صف ربات قرار گرفت', 'ok');
+                        refreshRobotChip();
+                    } catch (e) {
+                        toast(e.message, 'err');
+                    }
+                };
+            }
+
+            if (btnRobotAll) {
+                btnRobotAll.onclick = async () => {
+                    if (!S.book || !S.chapters) return;
+
+                    const remaining = S.chapters.filter(c => !c.done);
+                    if (!remaining.length) {
+                        toast('فصل ناتمامی وجود ندارد', 'warn');
+                        return;
+                    }
+
+                    let queued = 0;
+                    let saved = 0;
+                    let skipped = 0;
+                    let failed = 0;
+
+                    btnRobotAll.disabled = true;
+
+                    for (const c of remaining) {
+                        try {
+                            const r = await POST('/api/robot/queue', {
+                                book: S.book,
+                                chapter: c.file,
+                                autoChain: true
+                            });
+
+                            if (r.queued) queued++;
+                            else if (r.saved) saved++;
+                            else skipped++;
+                        } catch (e) {
+                            failed++;
+                        }
+                    }
+
+                    btnRobotAll.disabled = false;
+
+                    toast(
+                        `🤖 صف ربات: ${fa(queued)} فصل` +
+                        (saved ? ` • ${fa(saved)} ذخیره شد` : '') +
+                        (skipped ? ` • ${fa(skipped)} رد شد` : '') +
+                        (failed ? ` • ${fa(failed)} خطا` : ''),
+                        queued ? 'ok' : 'warn',
+                        4000
+                    );
+
+                    refreshRobotChip();
+                };
+            }
+
+            async function clearQueue() {
+                try {
+                    await POST('/api/robot/clear');
+                    toast('صف ربات خالی شد', 'warn');
+                    refreshRobotChip();
+                } catch (e) {
+                    toast(e.message, 'err');
+                }
+            }
+
+            if (btnRobotClear) btnRobotClear.onclick = clearQueue;
+            if (btnRobotClearHome) btnRobotClearHome.onclick = clearQueue;
+
+            if (btnRobotContinue) {
+                btnRobotContinue.onclick = async () => {
+                    const last = (() => { try { return localStorage.getItem('novelquest_last_book'); } catch (e) { return null; } })();
+                    const target = (S.book || last || (S.books[0] && S.books[0].name));
+                    if (!target) { toast('اول یک کتاب انتخاب کن', 'warn'); return; }
+                    await queueWholeBook(target, false);
+                };
+            }
+
+            if (btnRobotThisChapter) {
+                btnRobotThisChapter.onclick = async () => {
+                    if (!S.ch || !S.book) return;
+
+                    try {
+                        const r = await POST('/api/robot/queue', {
+                            book: S.book,
+                            chapter: S.ch.file,
+                            autoChain: true
+                        });
+
+                        if (r.saved) toast('🤖 فصل ذخیره شد', 'ok');
+                        else if (r.skipped) toast('🤖 رد شد: ' + r.reason, 'warn');
+                        else toast('🤖 این فصل در صف ربات قرار گرفت', 'ok');
+
+                        refreshRobotChip();
+                    } catch (e) {
+                        toast(e.message, 'err');
+                    }
+                };
+            }
+
+            setInterval(refreshRobotChip, 4000);
+
+            refreshRobotChip();
+        })();
+
+        /* ===================== LOG VIEWER ===================== */
+        (function () {
+            const logView = $('#logView');
+            const logSource = $('#logSource');
+            const logSearch = $('#logSearch');
+            const btnRefreshLogs = $('#btnRefreshLogs');
+            const btnClearLogs = $('#btnClearLogs');
+
+            if (!logView) return;
+
+            let logTimer = null;
+
+            async function refreshLogs() {
+                try {
+                    const source = logSource ? logSource.value : 'all';
+                    const search = encodeURIComponent((logSearch && logSearch.value) || '');
+                    const d = await GET(`/api/logs?limit=300&source=${encodeURIComponent(source)}&search=${search}`);
+
+                    logView.textContent = (d.logs || []).map(l => {
+                        const meta = l.meta && Object.keys(l.meta).length ? ' ' + JSON.stringify(l.meta) : '';
+                        return `[${l.ts}] [${l.source}] [${l.level.toUpperCase()}] ${l.message}${meta}`;
+                    }).join('\n') || 'No logs yet.';
+                } catch (e) {
+                    logView.textContent = 'Log error: ' + e.message;
+                }
+            }
+
+            function scheduleLogs() {
+                clearInterval(logTimer);
+                logTimer = setInterval(() => {
+                    if (document.getElementById('screen-home')?.classList.contains('active')) refreshLogs();
+                }, 4000);
+            }
+
+            if (logSource) logSource.onchange = refreshLogs;
+
+            if (logSearch) {
+                logSearch.oninput = () => {
+                    clearTimeout(logSearch._deb);
+                    logSearch._deb = setTimeout(refreshLogs, 350);
+                };
+            }
+
+            if (btnRefreshLogs) btnRefreshLogs.onclick = refreshLogs;
+
+            if (btnClearLogs) {
+                btnClearLogs.onclick = async () => {
+                    try {
+                        await POST('/api/logs/clear');
+                        toast('لاگ‌ها پاک شدند', 'warn');
+                        refreshLogs();
+                    } catch (e) {
+                        toast(e.message, 'err');
+                    }
+                };
+            }
+
+            refreshLogs();
+            scheduleLogs();
+        })();
+
+        function showHelp() {
+            modal({
+                title: 'راهنمای سریع', ok: 'بزن بریم', html: true, body: `
+    <ol class="steps-help">
+      <li><b>ربات (خودکار):</b> روی هر کتاب دکمهٔ 🤖 را بزن — همهٔ فصل‌های ناتمام در صف می‌روند. افزونه NovelBot بقیه را انجام می‌دهد.</li>
+      <li><b>دستی:</b> «باز کردن نقشه» → یک فصل را انتخاب کن → مراحل ترجمه ← ویرایش ← بازبینی ← ثبت.</li>
+      <li><b>کروم:</b> در صورت نیاز، پروفایل‌های کاری را از بخش بالای خانه باز کن.</li>
+    </ol>
+    <p style="margin-top:12px">میان‌برها: <span class="kbd">Ctrl+Enter</span> مرحلهٔ بعد • <span class="kbd">Alt+1/2/3</span> کپی پرامپت‌ها</p>`});
+        }
+
+        /* ================= boot ================= */
+        (async function init() {
+            renderHud(); bumpDay();
+            try { S.prompts = (await GET('/api/prompts')); } catch (e) { S.prompts = {}; }
+            await Promise.all([loadBooks(), loadChrome()]);
+            setInterval(() => { if ($('#screen-home').classList.contains('active')) loadChrome(); }, 9000);
+            if (!localStorage.getItem('novelquest_seen')) { localStorage.setItem('novelquest_seen', '1'); showHelp(); }
+        })();
+
+
+
+
+    </script>
+</body>
+
+</html>

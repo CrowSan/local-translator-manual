@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>NovelBot</title>
+<style>
+body{margin:0;width:280px;font-family:system-ui,sans-serif;background:#0b0f1a;color:#e7ecf3}
+.head{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:center}
+.head h1{margin:0;font-size:15px;font-weight:800}
+.head .dot{width:10px;height:10px;border-radius:50%;background:#f87171}
+.head .dot.on{background:#34d399;box-shadow:0 0 10px #34d399}
+.body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#9ba7bd}
+.row b{color:#fff}
+select,button{background:#111827;color:#fff;border:1px solid rgba(255,255,255,.1);padding:8px 12px;border-radius:8px;font:600 12.5px system-ui;cursor:pointer}
+button.go{background:linear-gradient(135deg,#0ea5e9,#22d3ee);color:#03131a;border:none}
+button.st{background:linear-gradient(135deg,#ef4444,#fb7185);color:#fff;border:none}
+button:disabled{opacity:.5;cursor:not-allowed}
+.stats{font-size:11px;color:#7b8aa1;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="dot" id="dot"></div>
+  <h1>🤖 NovelBot</h1>
+</div>
+<div class="body">
+  <div class="row"><span>هوش مصنوعی</span>
+    <select id="pref">
+      <option value="gemini">Gemini</option>
+      <option value="chatgpt">ChatGPT</option>
+    </select>
+  </div>
+  <div class="row"><span>وضعیت</span><b id="status">idle</b></div>
+  <div class="row"><span>در صف سرور</span><b id="queue">-</b></div>
+  <div class="stats">
+    پردازش‌شده: <span id="ok">0</span> • ناموفق: <span id="fail">0</span>
+  </div>
+  <button id="btn" class="go">▶ شروع</button>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

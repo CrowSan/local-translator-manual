@@ -1,0 +1,9 @@
+node_modules/
+input/
+output/
+books/
+logs/
+.vscode/
+user_data/
+*.zip
+*.rar
