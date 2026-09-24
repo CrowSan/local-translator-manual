@@ -47,6 +47,14 @@ async function readAnyText(filePath) {
 
 const bookDir  = book => path.join(BOOKS_DIR, book);
 const safeName = name => String(name || '').replace(/[\\/]/g, '').replace(/\.\./g, '');
+// Worker (chrome profile) identity for parallel dispatch. Assigned jobs stick
+// to their owner; unassigned jobs can be taken by anyone.
+const normWorker = w => {
+    const s = String(w || '').trim().slice(0, 64);
+    if (!s) return null;
+    if (!/^[A-Za-z0-9_.\-@\u0600-\u06FF ]+$/.test(s)) return null;
+    return s;
+};
 
 async function readState(bDir) {
     const p = path.join(bDir, 'translated', STATE_FILE);
@@ -55,9 +63,113 @@ async function readState(bDir) {
 }
 
 async function writeState(bDir, state) {
+    // Fail-safe slimming: move any legacy full texts into draft files first.
+    // If migration of an entry fails, the entry is kept as-is (never lose text).
+    for (const [name, entry] of Object.entries(state || {})) {
+        if (entry && (entry.inputTranslation || entry.editedText || entry.finalText || entry.saveText)) {
+            try { state[name] = await migrateEntryToDrafts(bDir, name, entry); }
+            catch (e) { /* keep original entry */ }
+        }
+    }
     const dir = path.join(bDir, 'translated');
     await fs.ensureDir(dir);
     await fs.writeJson(path.join(dir, STATE_FILE), state, { spaces: 2 });
+}
+
+/* ---- slim state: stage texts live in per-chapter draft files, _state.json
+   keeps only metadata: step, stage (none|translate|edit|proof|done), word
+   counts, tr flags. ---- */
+const DRAFT_KINDS = ['translation', 'edited', 'final', 'save'];
+const draftPath = (bDir, name, kind) =>
+    path.join(bDir, 'translated', '_drafts', name + '.' + kind + '.txt');
+
+async function readDraft(bDir, name, kind) {
+    try {
+        const p = draftPath(bDir, name, kind);
+        if (await fs.pathExists(p)) return await fs.readFile(p, 'utf8');
+    } catch (e) { /* ignore */ }
+    return '';
+}
+
+async function writeDraft(bDir, name, kind, text) {
+    if (!String(text || '').trim()) return false; // never wipe a draft with empty text
+    await fs.ensureDir(path.dirname(draftPath(bDir, name, kind)));
+    await fs.writeFile(draftPath(bDir, name, kind), String(text), 'utf8');
+    return true;
+}
+
+async function removeDrafts(bDir, name) {
+    for (const kind of DRAFT_KINDS) {
+        try { await fs.remove(draftPath(bDir, name, kind)); } catch (e) { /* ignore */ }
+    }
+}
+
+/* Full stage texts: drafts first, legacy state fields second. */
+async function stageTexts(bDir, name, cur) {
+    cur = cur || {};
+    const final = (await readDraft(bDir, name, 'final')) || cur.finalText || '';
+    const save = (await readDraft(bDir, name, 'save')) || cur.saveText || final;
+    return {
+        inputTranslation: (await readDraft(bDir, name, 'translation')) || cur.inputTranslation || '',
+        editedText: (await readDraft(bDir, name, 'edited')) || cur.editedText || '',
+        finalText: final,
+        saveText: save
+    };
+}
+
+/* Word counts per stage: stored counts first, then legacy texts, then drafts. */
+async function stageWordCounts(bDir, name, cur) {
+    cur = cur || {};
+    let tw = Number(cur.transWords) || 0;
+    let ew = Number(cur.editedWords) || 0;
+    let fw = Number(cur.finalWords) || 0;
+    if (!tw) tw = countWords(cur.inputTranslation || '');
+    if (!ew) ew = countWords(cur.editedText || '');
+    if (!fw) fw = countWords(cur.finalText || cur.saveText || '');
+    if (!tw) tw = countWords(await readDraft(bDir, name, 'translation'));
+    if (!ew) ew = countWords(await readDraft(bDir, name, 'edited'));
+    if (!fw) fw = countWords((await readDraft(bDir, name, 'final')) || (await readDraft(bDir, name, 'save')));
+    return { tw, ew, fw };
+}
+
+const STAGE_RANK = { none: 0, translate: 1, edit: 2, proof: 3, done: 4 };
+function stageForStep(step, done) {
+    if (done) return 'done';
+    if (step >= 3) return 'proof';
+    if (step >= 2) return 'edit';
+    if (step >= 1) return 'translate';
+    return 'none';
+}
+
+/* One-time migration of a legacy entry (full texts inside _state.json):
+   flush texts to drafts (verified), then return a slim metadata entry. */
+async function migrateEntryToDrafts(bDir, name, entry) {
+    const pairs = [
+        ['translation', entry.inputTranslation],
+        ['edited', entry.editedText],
+        ['final', entry.finalText],
+        ['save', entry.saveText]
+    ];
+    for (const [kind, text] of pairs) {
+        if (String(text || '').trim() && !(await readDraft(bDir, name, kind)).trim()) {
+            await writeDraft(bDir, name, kind, text);
+        }
+    }
+    // Verify: every non-empty legacy text must now be readable back.
+    for (const [kind, text] of pairs) {
+        if (String(text || '').trim()) {
+            const back = await readDraft(bDir, name, kind);
+            if (back.trim().length !== String(text).trim().length) throw new Error('draft verify failed:' + kind);
+        }
+    }
+    const slim = { ...entry };
+    delete slim.inputTranslation; delete slim.editedText;
+    delete slim.finalText; delete slim.saveText;
+    slim.transWords = countWords(entry.inputTranslation || '');
+    slim.editedWords = countWords(entry.editedText || '');
+    slim.finalWords = countWords(entry.finalText || entry.saveText || '');
+    if (!slim.stage) slim.stage = stageForStep(slim.step || 0, slim.done);
+    return slim;
 }
 
 async function listChapterFiles(bDir) {
@@ -101,6 +213,33 @@ async function findTr(bDir, chapterName) {
     if (byNum) return path.join(trDir, byNum);
 
     return null;
+}
+
+/* Pre-made translations in books/<book>/tr are RAW translations: they never
+   went through edit/proof. When such a file exists for a chapter that has no
+   inputTranslation in state yet, import it so the pipeline starts at EDIT
+   instead of TRANSLATE. Returns true when something was imported. */
+async function importTrIntoState(bDir, chapterName, state) {
+    const cur = (state || {})[chapterName] || {};
+    const w = await stageWordCounts(bDir, chapterName, cur);
+    if (w.tw > 0) return false;
+    const trPath = await findTr(bDir, chapterName);
+    if (!trPath) return false;
+    let text = '';
+    try { text = await readAnyText(trPath); } catch (e) { return false; }
+    if (!text.trim()) return false;
+    await writeDraft(bDir, chapterName, 'translation', text);
+    state[chapterName] = {
+        ...cur,
+        step: Math.max(cur.step || 0, 1),
+        stage: 'translate',
+        transWords: countWords(text),
+        outWords: countWords(text),
+        trImported: true,
+        trFile: path.basename(trPath),
+        updatedAt: new Date().toISOString()
+    };
+    return true;
 }
 
 async function readGlossary(bDir) {
@@ -281,12 +420,33 @@ app.get('/api/books', async (req, res) => {
             if (await fs.pathExists(trSrc)) {
                 trCount = (await fs.readdir(trSrc)).filter(isChapterFile).length;
             }
+            // trPending = chapters with a ready tr file that are NOT finished yet
+            // and have no translation input yet -> they can start at EDIT.
+            // (state-only check: counts/legacy fields; no draft reads here.)
+            let trPending = 0;
+            try {
+                const st0 = await readState(bDir);
+                for (const c of chapters) {
+                    const nm = path.parse(c).name;
+                    const isDone = await fs.pathExists(path.join(trOut, nm + '.json'));
+                    if (isDone) continue;
+                    const cur = st0[nm] || {};
+                    const hasInput = (Number(cur.transWords) > 0) || !!((cur.inputTranslation || '').trim());
+                    if (hasInput) continue;
+                    if (await findTr(bDir, nm)) trPending++;
+                }
+            } catch (e) { /* ignore */ }
+            const chapterCount = chapters.length;
             books.push({
                 name: item,
-                chapterCount: chapters.length,
+                chapterCount,
                 doneCount,
                 trCount,
-                hasGlossary: await fs.pathExists(path.join(bDir, 'glossary.txt'))
+                trPending,
+                hasGlossary: await fs.pathExists(path.join(bDir, 'glossary.txt')),
+                percent: chapterCount ? Math.round(doneCount / chapterCount * 100) : 0,
+                status: !chapterCount || doneCount <= 0 ? 'not-started'
+                    : (doneCount >= chapterCount ? 'completed' : 'in-progress')
             });
         }
         res.json({ books });
@@ -310,14 +470,22 @@ app.get('/api/books/:book', async (req, res) => {
             const done = await fs.pathExists(path.join(bDir, 'translated', name + '.json'));
             const tr = await findTr(bDir, name);
             const stt = state[name] || {};
+            const hasInput = (Number(stt.transWords) > 0) || !!((stt.inputTranslation || '').trim());
             chapters.push({
                 index: i,
                 file: f,
                 name,
                 done,
                 step: done ? 4 : (stt.step || 0),
+                stage: done ? 'done' : (stt.stage || stageForStep(stt.step || 0, false)),
+                outWords: Number(stt.outWords) || 0,
                 hasTr: !!tr,
-                trFile: tr ? path.basename(tr) : null
+                trFile: tr ? path.basename(tr) : null,
+                // tr can be used as step-1 input: chapter is able to start at EDIT
+                trImportable: !done && !!tr && !hasInput,
+                trImported: !!stt.trImported,
+                // effective start stage for UI / robot hints
+                startFrom: done ? 'done' : (hasInput || tr) ? 'edit' : 'translate'
             });
         }
 
@@ -339,8 +507,64 @@ app.post('/api/books/:book/reset', async (req, res) => {
             for (const f of files) {
                 if (f.toLowerCase().endsWith('.json')) await fs.remove(path.join(trDir, f));
             }
+            await fs.remove(path.join(trDir, '_drafts'));
         }
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* Bulk-import ready-made tr translations as step-1 input.
+   Chapters with tr files skip TRANSLATE and start at EDIT. */
+app.post('/api/books/:book/import-tr', async (req, res) => {
+    try {
+        const book = safeName(req.params.book);
+        const bDir = bookDir(book);
+        if (!await fs.pathExists(bDir)) return res.status(404).json({ error: 'کتاب پیدا نشد' });
+        const files = await listChapterFiles(bDir);
+        const state = await readState(bDir);
+        let imported = 0, skipped = 0;
+        const only = req.body && Array.isArray(req.body.files) ? new Set(req.body.files.map(f => path.basename(f))) : null;
+        for (const f of files) {
+            if (only && !only.has(f)) continue;
+            const name = path.parse(f).name;
+            const done = await fs.pathExists(path.join(bDir, 'translated', name + '.json'));
+            if (done) { skipped++; continue; }
+            if (await importTrIntoState(bDir, name, state)) imported++;
+            else skipped++;
+        }
+        await writeState(bDir, state);
+        pushLog('server', 'info', 'tr bulk import', { book, imported, skipped });
+        res.json({ success: true, imported, skipped });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* Use the tr file of ONE chapter as its translation input (start at EDIT). */
+app.post('/api/books/:book/chapter/:file/use-tr', async (req, res) => {
+    try {
+        const book = safeName(req.params.book);
+        const file = path.basename(req.params.file);
+        const bDir = bookDir(book);
+        const name = path.parse(file).name;
+        if (!await fs.pathExists(path.join(bDir, file))) return res.status(404).json({ error: 'فصل پیدا نشد' });
+        const trPath = await findTr(bDir, name);
+        if (!trPath) return res.status(404).json({ error: 'ترجمهٔ آماده‌ای در پوشهٔ tr پیدا نشد' });
+        const text = await readAnyText(trPath);
+        if (!text.trim()) return res.status(422).json({ error: 'فایل tr خالی است' });
+        await writeDraft(bDir, name, 'translation', text);
+        const state = await readState(bDir);
+        state[name] = {
+            ...(state[name] || {}),
+            step: Math.max((state[name] || {}).step || 0, 1),
+            stage: 'translate',
+            transWords: countWords(text),
+            outWords: countWords(text),
+            trImported: true,
+            trFile: path.basename(trPath),
+            updatedAt: new Date().toISOString()
+        };
+        await writeState(bDir, state);
+        pushLog('server', 'info', 'tr imported for chapter (starts at edit)', { book, chapter: name });
+        res.json({ success: true, step: state[name].step, words: countWords(text) });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -361,6 +585,8 @@ app.get('/api/books/:book/chapter/:file/data', async (req, res) => {
         const trPath = await findTr(bDir, name);
         const glossary = await readGlossary(bDir);
 
+        const draftTexts = await stageTexts(bDir, name, stt);
+        const words = await stageWordCounts(bDir, name, stt);
         res.json({
             book, file, name,
             rawText,
@@ -368,11 +594,20 @@ app.get('/api/books/:book/chapter/:file/data', async (req, res) => {
             glossaryCount: matchGlossary(glossary, rawText).length,
             done,
             step: done ? 4 : (stt.step || 0),
+            stage: done ? 'done' : (stt.stage || stageForStep(stt.step || 0, false)),
+            words: {
+                raw: countWords(rawText),
+                input: words.tw,
+                output: stt.outWords || words.fw || words.ew || words.tw || 0,
+                trans: words.tw,
+                edited: words.ew,
+                final: words.fw
+            },
             texts: {
-                inputTranslation: stt.inputTranslation || '',
-                editedText: stt.editedText || '',
-                finalText: stt.finalText || '',
-                saveText: stt.saveText || ''
+                inputTranslation: draftTexts.inputTranslation,
+                editedText: draftTexts.editedText,
+                finalText: draftTexts.finalText,
+                saveText: draftTexts.saveText
             },
             tr: trPath
                 ? { exists: true, file: path.basename(trPath), text: await readAnyText(trPath) }
@@ -442,7 +677,7 @@ app.post('/api/compact', (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-/* save step progress + working texts (auto-save) */
+/* save step progress (auto-save): texts go to draft files, state keeps counts */
 app.post('/api/books/:book/chapter/:file/progress', async (req, res) => {
     try {
         const book = safeName(req.params.book);
@@ -453,20 +688,47 @@ app.post('/api/books/:book/chapter/:file/progress', async (req, res) => {
         const texts = body.texts || {};
         const step = Number(body.step) || 0;
 
+        const pairs = [
+            ['translation', 'inputTranslation'],
+            ['edited', 'editedText'],
+            ['final', 'finalText'],
+            ['save', 'saveText']
+        ];
+        const staged = {};
+        for (const [kind, key] of pairs) {
+            const v = texts[key];
+            if (v !== undefined && String(v).trim()) {
+                await writeDraft(bDir, name, kind, v);
+                staged[kind] = countWords(v);
+            }
+        }
+
         const state = await readState(bDir);
         const cur = state[name] || {};
-        const merged = {
+        const prev = await stageWordCounts(bDir, name, cur);
+        let rawWords = Number(cur.rawWords) || 0;
+        if (!rawWords) {
+            try { rawWords = countWords(await readAnyText(path.join(bDir, file))); } catch (e) { rawWords = 0; }
+        }
+        const stepStage = stageForStep(step, false);
+        const rank = s => STAGE_RANK[s] || 0;
+        const stage = rank(stepStage) >= rank(cur.stage || 'none') ? stepStage : (cur.stage || 'none');
+        // outWords = highest-stage text we have (final > edited > translation)
+        const outWords = staged.save || staged.final || staged.edited || staged.translation
+            || cur.outWords || prev.fw || prev.ew || prev.tw || 0;
+        state[name] = {
             ...cur,
             step: Math.max(cur.step || 0, step),
-            inputTranslation: texts.inputTranslation !== undefined ? texts.inputTranslation : (cur.inputTranslation || ''),
-            editedText:       texts.editedText       !== undefined ? texts.editedText       : (cur.editedText || ''),
-            finalText:        texts.finalText        !== undefined ? texts.finalText        : (cur.finalText || ''),
-            saveText:         texts.saveText         !== undefined ? texts.saveText         : (cur.saveText || ''),
+            stage,
+            rawWords,
+            transWords: staged.translation || prev.tw,
+            editedWords: staged.edited || prev.ew,
+            finalWords: staged.final || staged.save || prev.fw,
+            outWords,
             updatedAt: new Date().toISOString()
         };
-        state[name] = merged;
         await writeState(bDir, state);
-        res.json({ success: true, step: merged.step });
+        res.json({ success: true, step: state[name].step, stage });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -507,11 +769,19 @@ app.post('/api/books/:book/chapter/:file/save', async (req, res) => {
         await fs.writeFile(outPath, JSON.stringify(json, null, 2), 'utf8');
 
         const state = await readState(bDir);
+        const curSv = state[name] || {};
+        await writeDraft(bDir, name, 'final', text);
+        await writeDraft(bDir, name, 'save', text);
         state[name] = {
-            ...(state[name] || {}),
+            ...curSv,
             step: 4,
             done: true,
-            saveText: text,
+            stage: 'done',
+            rawWords,
+            transWords: Number(curSv.transWords) || 0,
+            editedWords: Number(curSv.editedWords) || 0,
+            finalWords: words,
+            outWords: words,
             updatedAt: new Date().toISOString()
         };
         await writeState(bDir, state);
@@ -563,6 +833,7 @@ app.get('/api/stats', async (req, res) => {
 /* ===================== ROBOT QUEUE ===================== */
 const robotQueue = [];     // pending jobs
 const robotActive = {};    // jobId -> in progress
+const robotDropped = new Map(); // jobId -> ts: late results to ignore (cancelled via clear)
 
 function robotJobId() { return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
 
@@ -695,6 +966,11 @@ function cleanupStaleRobot() {
             pushLog('server', 'warn', 'stale robot job removed', { id, type: job.type, book: job.book, chapter: job.chapter, ageMs: age });
         }
     }
+    // Drop-tokens for cancelled jobs expire after 30 min (their extensions
+    // report back at most once, right after cancellation).
+    for (const [id, ts] of robotDropped) {
+        if (now - ts > 30 * 60 * 1000) robotDropped.delete(id);
+    }
 }
 
 async function saveChapterFinal({ book, chapter, text, force = false, source = 'manual' }) {
@@ -737,11 +1013,17 @@ async function saveChapterFinal({ book, chapter, text, force = false, source = '
     await fs.writeFile(outPath, JSON.stringify(json, null, 2), 'utf8');
 
     const state = await readState(bDir);
+    const curF = state[name] || {};
+    await writeDraft(bDir, name, 'final', text);
+    await writeDraft(bDir, name, 'save', text);
     state[name] = {
-        ...(state[name] || {}),
+        ...curF,
         step: 4,
         done: true,
-        saveText: text,
+        stage: 'done',
+        rawWords,
+        finalWords: words,
+        outWords: words,
         updatedAt: new Date().toISOString()
     };
     await writeState(bDir, state);
@@ -804,15 +1086,47 @@ async function buildRobotInput(job) {
         context = { rawWords: countWords(raw), glossaryCount: glossary.length };
     }
     else if (job.type === 'edit') {
-        const src = cur.inputTranslation || '';
+        // Pre-made tr files count as the translation input (raw, needs editing).
+        // Stage texts live in draft files (slim _state.json keeps only counts).
+        let src = (await readDraft(bDir, name, 'translation')) || cur.inputTranslation || '';
+        let fromTr = false;
+        if (!src.trim()) {
+            const trPath = await findTr(bDir, name);
+            if (trPath) {
+                try { src = await readAnyText(trPath); fromTr = true; } catch (e) { src = ''; }
+            }
+        }
         if (!src.trim()) throw new Error('No translated text available for edit step.');
+        // Persist the tr fallback so the workbench / chain sees step 1 done.
+        if (fromTr) {
+            try {
+                await writeDraft(bDir, name, 'translation', src);
+                const st = await readState(bDir);
+                st[name] = {
+                    ...(st[name] || {}),
+                    step: Math.max((st[name] || {}).step || 0, 1),
+                    stage: 'translate',
+                    transWords: countWords(src),
+                    outWords: countWords(src),
+                    trImported: true,
+                    updatedAt: new Date().toISOString()
+                };
+                await writeState(bDir, st);
+            } catch (e) { /* ignore */ }
+        }
         prompt = prompts.editorial || 'Edit this:';
         payload = 'ترجمهٔ نیازمند ویرایش:\n' + src;
-        context = { sourceWords: countWords(src) };
+        context = { sourceWords: countWords(src), fromTr };
     }
     else if (job.type === 'proof') {
         const raw = await readAnyText(filePath);
-        const faText = cur.editedText || cur.inputTranslation || '';
+        let faText = (await readDraft(bDir, name, 'edited'))
+            || (await readDraft(bDir, name, 'translation'))
+            || cur.editedText || cur.inputTranslation || '';
+        if (!faText.trim()) {
+            const trPath = await findTr(bDir, name);
+            if (trPath) { try { faText = await readAnyText(trPath); } catch (e) { faText = ''; } }
+        }
         if (!faText.trim()) throw new Error('No edited text available for proof step.');
         prompt = prompts.proofing || 'Proof this:';
         payload = 'EN:\n' + compact(raw) + '\n\nFA:\n' + compact(faText);
@@ -846,9 +1160,10 @@ async function buildRobotInput(job) {
 }
 
 /* single claim handler — builds prompt input at claim time */
-async function queueRobotJob({ book, chapter, type = null, autoChain = true, source = 'ui' }) {
+async function queueRobotJob({ book, chapter, type = null, autoChain = true, source = 'ui', owner = null }) {
     book = safeName(book);
     chapter = path.basename(chapter);
+    owner = normWorker(owner);
 
     const bDir = bookDir(book);
     const filePath = path.join(bDir, chapter);
@@ -864,16 +1179,32 @@ async function queueRobotJob({ book, chapter, type = null, autoChain = true, sou
     }
 
     const state = await readState(bDir);
-    const cur = state[name] || {};
+    let cur = state[name] || {};
+
+    // Ready-made tr translations are RAW (unedited) translations: if the
+    // chapter has a tr file but no translation yet, import it now so the
+    // pipeline starts at EDIT instead of TRANSLATE.
+    let trUsed = false;
+    if ((await stageWordCounts(bDir, name, cur)).tw <= 0) {
+        try {
+            if (await importTrIntoState(bDir, name, state)) {
+                await writeState(bDir, state);
+                cur = state[name] || {};
+                trUsed = true;
+                pushLog('server', 'info', 'tr used as translation input — starting at edit', { book, chapter });
+            }
+        } catch (e) { /* ignore import errors */ }
+    }
 
     // Content-based step detection: pick the earliest step whose required
     // text is missing or implausibly short — never trust the step number alone.
     let rawWords = 0;
     try { rawWords = countWords(await readAnyText(filePath)); } catch (e) { rawWords = 0; }
     const floor = stageWordFloor(rawWords);
-    const hasT = countWords(cur.inputTranslation) >= floor;
-    const hasE = countWords(cur.editedText) >= floor;
-    const hasF = countWords(cur.finalText || cur.saveText) >= floor;
+    const sw = await stageWordCounts(bDir, name, cur);
+    const hasT = sw.tw >= floor;
+    const hasE = sw.ew >= floor;
+    const hasF = sw.fw >= floor;
 
     if (!type) {
         if (!hasT) type = 'translate';
@@ -881,23 +1212,27 @@ async function queueRobotJob({ book, chapter, type = null, autoChain = true, sou
         else if (!hasF) type = 'proof';
         else type = 'save';
     } else {
+        // A tr-backed chapter never goes back to TRANSLATE: it starts at EDIT.
+        const trBacked = hasT || trUsed || !!(await findTr(bDir, name));
+        if (type === 'translate' && trBacked) type = 'edit';
         // Downgrade an explicit type if its required input is missing/weak.
-        if (type === 'edit' && !hasT) type = 'translate';
-        else if (type === 'proof') type = !hasT ? 'translate' : (!hasE ? 'edit' : 'proof');
-        else if (type === 'save' && !hasF) type = !hasT ? 'translate' : (!hasE ? 'edit' : 'proof');
+        if (type === 'edit' && !hasT) type = trBacked ? 'edit' : 'translate';
+        else if (type === 'proof') type = !hasT ? (trBacked ? 'edit' : 'translate') : (!hasE ? 'edit' : 'proof');
+        else if (type === 'save' && !hasF) type = !hasT ? (trBacked ? 'edit' : 'translate') : (!hasE ? 'edit' : 'proof');
     }
 
     if (type !== 'save') {
         pushLog('server', 'info', 'robot step picked by content', {
             book, chapter, type, rawWords, needWords: floor,
-            hasTranslate: hasT, hasEdit: hasE, hasFinal: hasF
+            hasTranslate: hasT, hasEdit: hasE, hasFinal: hasF, trUsed
         });
     }
 
     // If chapter already has final text but is not saved, save immediately.
     // Never force: a short final text stays unfinished for manual review.
     if (type === 'save') {
-        const text = cur.saveText || cur.finalText || cur.editedText || cur.inputTranslation || '';
+        const t = await stageTexts(bDir, name, cur);
+        const text = t.saveText || t.finalText || t.editedText || t.inputTranslation || '';
         if (!text.trim()) return { skipped: true, reason: 'no final text to save' };
 
         try {
@@ -929,12 +1264,13 @@ async function queueRobotJob({ book, chapter, type = null, autoChain = true, sou
         type,
         autoChain: !!autoChain,
         queuedAt: Date.now(),
-        source
+        source,
+        owner
     };
 
     robotQueue.push(job);
     pushLog('server', 'info', 'robot job queued', {
-        id: job.id, book, chapter, type, autoChain: job.autoChain, source
+        id: job.id, book, chapter, type, autoChain: job.autoChain, source, owner: owner || 'any'
     });
 
     return { queued: true, jobId: job.id, type };
@@ -944,27 +1280,57 @@ app.get('/api/robot/jobs', (req, res) => {
     cleanupStaleRobot();
 
     const limit = Math.min(Number(req.query.limit) || 1, 10);
-    const jobs = robotQueue.slice(0, limit).map(j => ({
+    const worker = normWorker(req.query.worker);
+    // Affinity: a named worker sees its OWN jobs first, then unassigned ones.
+    // Anonymous (no worker) workers only see unassigned jobs, so assigned
+    // ranges can't be stolen by the wrong profile.
+    let pool = robotQueue;
+    if (worker) {
+        const mine = robotQueue.filter(j => j.owner === worker);
+        const free = robotQueue.filter(j => !j.owner);
+        pool = [...mine, ...free];
+    } else {
+        pool = robotQueue.filter(j => !j.owner);
+    }
+    // Chain-first: a chapter's follow-up step (edit after translate, proof
+    // after edit) jumps ahead of fresh chapters, so each chapter runs its
+    // full path (tr→edit→proof, or raw→translate→edit→proof) before the
+    // worker moves on — instead of doing all first-steps first.
+    pool = [...pool.filter(j => j.source === 'chain'), ...pool.filter(j => j.source !== 'chain')];
+    const jobs = pool.slice(0, limit).map(j => ({
         id: j.id,
         type: j.type,
         book: j.book,
         chapter: j.chapter,
         autoChain: j.autoChain,
-        queuedAt: j.queuedAt
+        queuedAt: j.queuedAt,
+        owner: j.owner || null
     }));
 
-    res.json({ jobs, queueSize: robotQueue.length });
+    res.json({ jobs, queueSize: robotQueue.length, worker: worker || null });
 });
 
 app.post('/api/robot/claim', async (req, res) => {
     try {
         cleanupStaleRobot();
 
-        const { id } = req.body || {};
+        const { id, worker: rawWorker } = req.body || {};
+        const worker = normWorker(rawWorker);
         const idx = robotQueue.findIndex(j => j.id === id);
 
         if (idx < 0) return res.status(404).json({ error: 'job not found' });
         if (robotActive[id]) return res.status(409).json({ error: 'already claimed' });
+
+        // Ownership check BEFORE removing from the queue: a job assigned to
+        // profile A must be claimed by A (wrong-profile claims are rejected
+        // and the job stays queued for its owner).
+        const queued = robotQueue[idx];
+        if (queued.owner && queued.owner !== worker) {
+            pushLog('server', 'warn', 'claim rejected (wrong worker)', {
+                id, owner: queued.owner, worker: worker || '(anonymous)'
+            });
+            return res.status(409).json({ error: 'job assigned to worker "' + queued.owner + '"', owner: queued.owner });
+        }
 
         const job = robotQueue.splice(idx, 1)[0];
 
@@ -988,10 +1354,13 @@ app.post('/api/robot/claim', async (req, res) => {
         }
 
         job.claimedAt = Date.now();
+        job.worker = worker || null;
         robotActive[id] = job;
 
         pushLog('server', 'info', 'robot job claimed', {
-            id, book: job.book, chapter: job.chapter, type: job.type, inputChars: (job.input || '').length
+            id, book: job.book, chapter: job.chapter, type: job.type,
+            inputChars: (job.input || '').length,
+            owner: job.owner || 'any', worker: worker || '(anonymous)'
         });
 
         res.json({ success: true, job });
@@ -1010,6 +1379,15 @@ app.post('/api/robot/result', async (req, res) => {
         const success = !!body.success;
         const output = cleanAiOutput(body.output || '');
         const error = body.error || '';
+
+        // Results of jobs cancelled via "clear" are dropped silently: no
+        // state write and no auto-chain, so a cleared queue stays cleared.
+        if (robotDropped.has(id)) {
+            robotDropped.delete(id);
+            if (robotActive[id]) delete robotActive[id];
+            pushLog('server', 'warn', 'robot result dropped (job was cancelled)', { id, success });
+            return res.json({ success: false, dropped: true });
+        }
 
         const job = robotActive[id];
         if (job) delete robotActive[id];
@@ -1041,13 +1419,14 @@ app.post('/api/robot/result', async (req, res) => {
 
         // Reject garbage (AI refusals, one-liners) before it poisons state
         // or chains into the next step.
-        let srcWords = 0;
+        let srcWords = 0, rawW = 0;
         try {
             const rawCheck = await readAnyText(path.join(bDir, job.chapter));
-            const rawW = countWords(rawCheck);
+            rawW = countWords(rawCheck);
+            const sw0 = await stageWordCounts(bDir, name, cur);
             if (job.type === 'translate') srcWords = rawW;
-            else if (job.type === 'edit') srcWords = countWords(cur.inputTranslation);
-            else if (job.type === 'proof') srcWords = Math.max(rawW, countWords(cur.editedText || cur.inputTranslation));
+            else if (job.type === 'edit') srcWords = sw0.tw;
+            else if (job.type === 'proof') srcWords = Math.max(rawW, sw0.ew || sw0.tw);
         } catch (e) { srcWords = 0; }
 
         const need = acceptWordFloor(srcWords);
@@ -1067,26 +1446,28 @@ app.post('/api/robot/result', async (req, res) => {
             return res.json({ success: false, error: 'output too short: ' + outWords + ' words vs ~' + srcWords + ' source words (' + job.type + ')' });
         }
 
-        const texts = {
-            inputTranslation: cur.inputTranslation || '',
-            editedText: cur.editedText || '',
-            finalText: cur.finalText || '',
-            saveText: cur.saveText || ''
-        };
-
-        if (job.type === 'translate') texts.inputTranslation = output;
-        if (job.type === 'edit') texts.editedText = output;
+        // Slim state: full text goes to the draft file, _state.json keeps
+        // step + stage + word counts only.
+        if (job.type === 'translate') await writeDraft(bDir, name, 'translation', output);
+        if (job.type === 'edit') await writeDraft(bDir, name, 'edited', output);
         if (job.type === 'proof') {
-            texts.finalText = output;
-            texts.saveText = output;
+            await writeDraft(bDir, name, 'final', output);
+            await writeDraft(bDir, name, 'save', output);
         }
 
         const step = typeToStep(job.type);
+        const stage = job.type; // translate | edit | proof
+        const prev = await stageWordCounts(bDir, name, cur);
 
         state[name] = {
             ...cur,
-            ...texts,
             step: Math.max(cur.step || 0, step),
+            stage,
+            rawWords: rawW || cur.rawWords || 0,
+            transWords: job.type === 'translate' ? outWords : (prev.tw || cur.transWords || 0),
+            editedWords: job.type === 'edit' ? outWords : (prev.ew || cur.editedWords || 0),
+            finalWords: job.type === 'proof' ? outWords : (prev.fw || cur.finalWords || 0),
+            outWords,
             updatedAt: new Date().toISOString()
         };
 
@@ -1095,17 +1476,21 @@ app.post('/api/robot/result', async (req, res) => {
         pushLog('server', 'info', 'robot job completed', {
             id, book: job.book, chapter: job.chapter, type: job.type,
             words: countWords(output), chars: output.length,
-            head: output.slice(0, 200)
+            head: output.slice(0, 200),
+            worker: job.worker || body.worker || '(unknown)'
         });
 
         if (job.autoChain) {
+            // Follow-up steps inherit the owner so the whole chapter stays on
+            // the same profile (chat-context locality).
             if (job.type === 'translate') {
                 await queueRobotJob({
                     book: job.book,
                     chapter: job.chapter,
                     type: 'edit',
                     autoChain: true,
-                    source: 'chain'
+                    source: 'chain',
+                    owner: job.owner || null
                 });
             } else if (job.type === 'edit') {
                 await queueRobotJob({
@@ -1113,7 +1498,8 @@ app.post('/api/robot/result', async (req, res) => {
                     chapter: job.chapter,
                     type: 'proof',
                     autoChain: true,
-                    source: 'chain'
+                    source: 'chain',
+                    owner: job.owner || null
                 });
             } else if (job.type === 'proof') {
                 try {
@@ -1150,6 +1536,7 @@ app.post('/api/robot/queue', async (req, res) => {
         const chapter = body.chapter;
         const type = body.type || null;
         const autoChain = body.autoChain !== undefined ? body.autoChain : true;
+        const owner = normWorker(body.owner || body.worker);
 
         if (!book || !chapter) {
             console.error('🔴 MISSING DATA:', { book, chapter, fullBody: body });
@@ -1164,7 +1551,8 @@ app.post('/api/robot/queue', async (req, res) => {
             chapter,
             type,
             autoChain,
-            source: 'ui'
+            source: 'ui',
+            owner
         });
 
         res.json({ success: true, ...result });
@@ -1174,37 +1562,176 @@ app.post('/api/robot/queue', async (req, res) => {
     }
 });
 
+function robotPerWorker() {
+    const names = new Set(CHROME_PROFILES.map(p => p.name));
+    robotQueue.forEach(j => { if (j.owner) names.add(j.owner); });
+    Object.values(robotActive).forEach(j => {
+        if (j.owner) names.add(j.owner);
+        if (j.worker) names.add(j.worker);
+    });
+    return Array.from(names).map(name => {
+        const cur = Object.values(robotActive)
+            .filter(j => j.owner === name || j.worker === name)
+            .map(j => ({ id: j.id, type: j.type, book: j.book, chapter: j.chapter }));
+        return {
+            name,
+            queued: robotQueue.filter(j => j.owner === name).length,
+            active: cur.length,
+            current: cur[0] || null
+        };
+    });
+}
+
 app.get('/api/robot/status', (req, res) => {
     cleanupStaleRobot();
 
     res.json({
         queueSize: robotQueue.length,
+        unassigned: robotQueue.filter(j => !j.owner).length,
         pending: robotQueue.map(j => ({
             id: j.id,
             type: j.type,
             book: j.book,
             chapter: j.chapter,
-            queuedAt: j.queuedAt
+            queuedAt: j.queuedAt,
+            owner: j.owner || null
         })),
         active: Object.values(robotActive).map(j => ({
             id: j.id,
             type: j.type,
             book: j.book,
             chapter: j.chapter,
-            claimedAt: j.claimedAt
-        }))
+            claimedAt: j.claimedAt,
+            owner: j.owner || null,
+            worker: j.worker || null
+        })),
+        perWorker: robotPerWorker()
     });
 });
 
+/* worker (profile) overview: online state + queue depth + current job */
+app.get('/api/robot/workers', async (req, res) => {
+    try {
+        cleanupStaleRobot();
+        const per = robotPerWorker();
+        const byName = Object.fromEntries(per.map(p => [p.name, p]));
+        const workers = await Promise.all(CHROME_PROFILES.map(async p => ({
+            name: p.name,
+            dir: p.dir,
+            port: p.port,
+            online: await portOnline(p.port),
+            queued: (byName[p.name] || {}).queued || 0,
+            active: (byName[p.name] || {}).active || 0,
+            current: (byName[p.name] || {}).current || null
+        })));
+        const extra = per.filter(p => !CHROME_PROFILES.some(c => c.name === p.name))
+            .map(p => ({ ...p, dir: '', port: null, online: null }));
+        res.json({ workers: [...workers, ...extra] });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* Parallel dispatch: assign chapter ranges to profiles in one call.
+   Body: { assignments: [{ book, from, to, worker|owner, autoChain?, type? }] }
+   from/to are 1-based chapter positions as shown in the map UI (inclusive). */
+app.post('/api/robot/dispatch', async (req, res) => {
+    try {
+        const body = req.body || {};
+        const list = Array.isArray(body.assignments) ? body.assignments
+            : (body.book ? [body] : []);
+        if (!list.length) return res.status(400).json({ error: 'assignments are required' });
+
+        const summary = [];
+        for (const a of list) {
+            const book = safeName(a.book);
+            const owner = normWorker(a.worker || a.owner);
+            const autoChain = a.autoChain !== undefined ? !!a.autoChain : true;
+            const type = a.type || null;
+            let from = Math.max(1, Number(a.from) || 1);
+            let to = Math.max(1, Number(a.to) || from);
+            if (to < from) [from, to] = [to, from];
+
+            const bDir = bookDir(book);
+            if (!await fs.pathExists(bDir)) {
+                summary.push({ book, owner, error: 'book not found' });
+                continue;
+            }
+            const files = await listChapterFiles(bDir);
+            const slice = files.slice(from - 1, to);
+            // Pipeline preview: chapters with a ready tr (or existing
+            // translation input) start at EDIT, the rest at TRANSLATE.
+            // Either way autoChain walks each chapter to proof + save.
+            const st0 = await readState(bDir);
+            let viaEdit = 0, viaTranslate = 0;
+            for (const file of slice) {
+                const nm = path.parse(file).name;
+                if (await fs.pathExists(path.join(bDir, 'translated', nm + '.json'))) continue;
+                const cur0 = st0[nm] || {};
+                const w = await stageWordCounts(bDir, nm, cur0);
+                if (w.tw > 0 || await findTr(bDir, nm)) viaEdit++;
+                else viaTranslate++;
+            }
+            const pipeline = viaTranslate > 0 ? ['translate', 'edit', 'proof'] : ['edit', 'proof'];
+            let queued = 0, saved = 0, skipped = 0, failed = 0;
+            for (const file of slice) {
+                try {
+                    const r = await queueRobotJob({ book, chapter: file, type, autoChain, source: 'dispatch', owner });
+                    if (r.queued) queued++; else if (r.saved) saved++; else skipped++;
+                } catch (e) { failed++; }
+            }
+            pushLog('server', 'info', 'dispatch range queued', {
+                book, from, to, chapters: slice.length, owner: owner || 'any',
+                pipeline: pipeline.join('->'), viaEdit, viaTranslate, queued, saved, skipped, failed
+            });
+            summary.push({ book, from, to, chapters: slice.length, owner, pipeline, viaEdit, viaTranslate, queued, saved, skipped, failed });
+        }
+        res.json({ success: true, summary });
+    } catch (err) {
+        pushLog('server', 'error', 'dispatch error', { error: err.message });
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* Release assigned jobs back to the shared pool (all, or one worker's). */
+app.post('/api/robot/release', (req, res) => {
+    cleanupStaleRobot();
+    const worker = normWorker((req.body || {}).worker || (req.body || {}).owner);
+    let released = 0;
+    for (const j of robotQueue) {
+        if (!j.owner) continue;
+        if (worker && j.owner !== worker) continue;
+        j.owner = null;
+        released++;
+    }
+    pushLog('server', 'warn', 'robot jobs released to shared pool', { worker: worker || 'all', released });
+    res.json({ success: true, released });
+});
+
 app.post('/api/robot/clear', (req, res) => {
-    const pending = robotQueue.length;
-    const active = Object.keys(robotActive).length;
+    cleanupStaleRobot();
+    const body = req.body || {};
+    const worker = normWorker(body.worker || body.owner);
+    // cancelActive (default true): also stop in-flight jobs so their late
+    // results are dropped instead of chaining new jobs back into the queue.
+    const cancelActive = body.cancelActive === undefined ? true : !!body.cancelActive;
+    const match = j => !worker || j.owner === worker || j.worker === worker;
 
-    robotQueue.length = 0;
-    for (const k of Object.keys(robotActive)) delete robotActive[k];
-
-    pushLog('server', 'warn', 'robot queue cleared', { pending, active });
-    res.json({ success: true });
+    let removed = 0;
+    for (let i = robotQueue.length - 1; i >= 0; i--) {
+        if (match(robotQueue[i])) { robotQueue.splice(i, 1); removed++; }
+    }
+    let cancelled = 0;
+    if (cancelActive) {
+        for (const [id, job] of Object.entries(robotActive)) {
+            if (match(job)) {
+                delete robotActive[id];
+                robotDropped.set(id, Date.now());
+                cancelled++;
+            }
+        }
+    }
+    const activeLeft = Object.keys(robotActive).length;
+    pushLog('server', 'warn', 'robot queue cleared', { worker: worker || 'all', removed, cancelled, activeLeft });
+    res.json({ success: true, removed, cancelled, worker: worker || null });
 });
 
 /* redo one chapter: delete its translated JSON + state entry (source file untouched) */
@@ -1215,6 +1742,7 @@ app.post('/api/books/:book/chapter/:file/reset', async (req, res) => {
         const bDir = bookDir(book);
         const name = path.parse(file).name;
         await fs.remove(path.join(bDir, 'translated', name + '.json'));
+        await removeDrafts(bDir, name);
         const state = await readState(bDir);
         delete state[name];
         await writeState(bDir, state);

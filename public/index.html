@@ -1206,6 +1206,99 @@
             background: rgba(255, 255, 255, .2)
         }
 
+        /* ---------- custom dropdown (div-based, themed, floats above content) ---------- */
+        .cselect {
+            position: relative;
+            min-width: 140px
+        }
+
+        .cselect-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            color: var(--txt);
+            padding: 8px 11px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color .12s ease, background .12s ease
+        }
+
+        .cselect-btn:hover {
+            border-color: var(--line2);
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .cselect.open .cselect-btn {
+            border-color: #5b9cf6
+        }
+
+        .cselect-btn .lbl {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .cselect-btn .arr {
+            color: var(--dim);
+            font-size: 10px;
+            flex: none;
+            transition: transform .15s
+        }
+
+        .cselect.open .cselect-btn .arr {
+            transform: rotate(180deg)
+        }
+
+        .cselect-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            left: 0;
+            z-index: 500;
+            max-height: 240px;
+            overflow: auto;
+            background: #1a1e29;
+            border: 1px solid var(--line2);
+            border-radius: 10px;
+            padding: 5px
+        }
+
+        .cselect.open .cselect-menu {
+            display: block
+        }
+
+        .cselect-item {
+            padding: 8px 10px;
+            border-radius: 7px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .cselect-item:hover {
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .cselect-item.sel {
+            background: rgba(91, 156, 246, .16);
+            color: #fff
+        }
+
+        .cselect-empty {
+            padding: 8px 10px;
+            font-size: 11.5px;
+            color: var(--dim)
+        }
+
         /* ================= FLAT THEME OVERRIDES (simple & focused) ================= */
         :root {
             --bg: #111318;
@@ -1573,6 +1666,42 @@
                 </div>
             </div>
 
+            <div class="card" style="margin-bottom:16px">
+                <div class="sect-title">
+                    <div class="num">⚡</div>
+                    <div>
+                        <h2>توزیع موازی بین پروفایل‌ها</h2>
+                        <p>بازه‌های فصل را بین ۳ پروفایل کروم تقسیم کن تا هم‌زمان کار کنند — هر پروفایل فقط کارهای خودش را برمی‌دارد</p>
+                    </div>
+                    <div class="side">
+                        <span class="chip" id="workersChip">—</span>
+                        <button class="btn sm" id="btnWorkersRefresh">↻</button>
+                    </div>
+                </div>
+                <div id="workersTable" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+                <div class="row" style="border-top:1px dashed var(--line2);padding-top:12px">
+                    <div class="cselect" id="dBook" title="کتاب" style="flex:2;min-width:150px">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <input id="dFrom" type="number" min="1" value="1" title="از فصل"
+                        style="width:80px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:10px;font-size:12px;font-family:inherit">
+                    <input id="dTo" type="number" min="1" value="10" title="تا فصل"
+                        style="width:80px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:10px;font-size:12px;font-family:inherit">
+                    <div class="cselect" id="dWorker" title="پروفایل" style="flex:1;min-width:120px">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <button class="btn sm" id="btnAddAssign">＋ افزودن به دسته</button>
+                </div>
+                <div id="assignList" style="display:flex;flex-direction:column;gap:6px;margin-top:10px"></div>
+                <div class="row" style="margin-top:10px">
+                    <button class="btn btn-go" id="btnDispatch">🚀 ارسال دسته به صف</button>
+                    <button class="btn sm" id="btnReleaseAll" title="کارهای اختصاص‌یافته را به صف مشترک برگردان">↩ آزادسازی همه</button>
+                    <span class="small dim">اول در پاپ‌آپ هر افزونه نام پروفایلش را انتخاب کن، بعد هر سه را ▶ شروع بزن.</span>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="sect-title">
                     <div class="num">۱</div>
@@ -1585,6 +1714,23 @@
                         <button class="btn sm" id="btnReload">↻ بروزرسانی</button>
                     </div>
                 </div>
+                <div class="row" id="bookToolbar" style="margin-bottom:12px">
+                    <input id="bookSearch" placeholder="🔎 جستجوی کتاب…"
+                        style="flex:1;min-width:160px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:8px 11px;border-radius:10px;font-size:12px;font-family:inherit">
+                    <div class="cselect" id="bookSort" title="مرتب‌سازی">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <div class="cselect" id="bookStatusFilter" title="وضعیت پیشرفت">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <div class="cselect" id="bookFlagFilter" title="ویژگی‌ها">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <span class="chip" id="bookCountChip">—</span>
+                </div>
                 <div class="books" id="books"></div>
             </div>
 
@@ -1596,13 +1742,10 @@
                         <p>فایل کامل: <span class="mono" dir="ltr">logs/novelbot.log</span></p>
                     </div>
                     <div class="side">
-                        <select id="logSource"
-                            style="background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:7px 10px;border-radius:10px;font-size:11.5px">
-                            <option value="all">همه</option>
-                            <option value="server">server</option>
-                            <option value="background">background</option>
-                            <option value="content">content</option>
-                        </select>
+                        <div class="cselect" id="logSource" title="منبع لاگ" style="min-width:110px">
+                            <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                            <div class="cselect-menu"></div>
+                        </div>
                         <input id="logSearch" placeholder="جستجو…"
                             style="background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:7px 10px;border-radius:10px;font-size:11.5px;min-width:130px">
                         <button class="btn sm" id="btnRefreshLogs">↻</button>
@@ -1633,6 +1776,7 @@
                 <div class="row" style="margin-top:12px;border-top:1px dashed var(--line2);padding-top:12px">
                     <button class="btn btn-vi" id="btnRobotAll">🤖 ربات: همهٔ ناتمام‌ها</button>
                     <button class="btn" id="btnRobotNext">⚙ ربات: فصل بعدی</button>
+                    <button class="btn sm" id="btnImportTr" title="ترجمه‌های آمادهٔ پوشه tr را به‌عنوان ورودی ویرایش ثبت کن — این فصل‌ها از مرحلهٔ ویرایش شروع می‌شوند">📥 شروع از ویرایش (tr)</button>
                     <button class="btn btn-rd sm" id="btnRobotClear">✖ خالی کردن صف</button>
                     <span class="chip" id="robotChip">—</span>
                 </div>
@@ -1643,11 +1787,24 @@
                     <div class="num">۲</div>
                     <div>
                         <h2>نقشهٔ فصل‌ها</h2>
-                        <p>روی یک فصل کلیک کن تا وارد مراحل شوی</p>
+                        <p>روی یک فصل کلیک کن تا وارد مراحل شوی — فصل‌های دارای tr از ویرایش شروع می‌شوند</p>
                     </div>
                     <div class="side">
+                        <span class="chip" id="chCountChip">—</span>
                         <label class="optline" style="margin:0"><input type="checkbox" id="onlyUnfinished"> فقط
                             ناتمام‌ها</label>
+                    </div>
+                </div>
+                <div class="row" id="chToolbar" style="margin-bottom:12px">
+                    <input id="chSearch" placeholder="🔎 جستجوی فصل… (نام یا شماره)"
+                        style="flex:1;min-width:150px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);padding:8px 11px;border-radius:10px;font-size:12px;font-family:inherit">
+                    <div class="cselect" id="chSort" title="مرتب‌سازی فصل‌ها">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <div class="cselect" id="chStatusFilter" title="فیلتر وضعیت">
+                        <button class="cselect-btn" type="button"><span class="lbl">—</span><span class="arr">▾</span></button>
+                        <div class="cselect-menu"></div>
                     </div>
                 </div>
                 <div class="mapgrid" id="mapGrid"></div>
@@ -1935,7 +2092,11 @@
         }
 
         /* ================= state ================= */
-        const S = { books: [], prompts: {}, profiles: [], chromePath: '', book: null, chapters: [], ch: null, step: 0, filter: false };
+        const S = {
+            books: [], prompts: {}, profiles: [], chromePath: '', book: null, chapters: [], ch: null, step: 0, filter: false,
+            bookSearch: '', bookSort: 'name-asc', bookStatus: 'all', bookFlag: 'all',
+            chSearch: '', chSort: 'index-asc', chStatus: 'all'
+        };
         const STEP_NAMES = ['ترجمه', 'ویرایش', 'بازبینی', 'ثبت'];
         const NEXT_LABELS = ['مرحلهٔ بعد: ویرایش ←', 'مرحلهٔ بعد: بازبینی ←', 'مرحلهٔ بعد: ثبت نهایی ←', '💾 ذخیره و پایان فصل'];
 
@@ -1948,14 +2109,50 @@
         /* ================= HOME ================= */
         async function loadBooks() {
             const d = await GET('/api/books'); S.books = d.books || [];
+            renderBooks();
+        }
+        function filteredSortedBooks() {
+            const q = (S.bookSearch || '').trim().toLowerCase();
+            let list = S.books.filter(b => {
+                if (q && !String(b.name || '').toLowerCase().includes(q)) return false;
+                const status = b.status || (!b.chapterCount || b.doneCount <= 0 ? 'not-started' : (b.doneCount >= b.chapterCount ? 'completed' : 'in-progress'));
+                if (S.bookStatus !== 'all' && status !== S.bookStatus) return false;
+                if (S.bookFlag === 'has-tr' && !(b.trCount > 0)) return false;
+                if (S.bookFlag === 'tr-importable' && !(b.trPending > 0)) return false;
+                if (S.bookFlag === 'has-glossary' && !b.hasGlossary) return false;
+                if (S.bookFlag === 'no-glossary' && b.hasGlossary) return false;
+                return true;
+            });
+            const by = {
+                'name-asc': (a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' }),
+                'name-desc': (a, b) => String(b.name).localeCompare(String(a.name), undefined, { numeric: true, sensitivity: 'base' }),
+                'progress-desc': (a, b) => (b.percent ?? 0) - (a.percent ?? 0),
+                'progress-asc': (a, b) => (a.percent ?? 0) - (b.percent ?? 0),
+                'chapters-desc': (a, b) => (b.chapterCount || 0) - (a.chapterCount || 0),
+                'chapters-asc': (a, b) => (a.chapterCount || 0) - (b.chapterCount || 0),
+                'done-desc': (a, b) => (b.doneCount || 0) - (a.doneCount || 0),
+                'tr-desc': (a, b) => (b.trCount || 0) - (a.trCount || 0)
+            }[S.bookSort] || ((a, b) => 0);
+            return list.sort(by);
+        }
+        function renderBooks() {
             let total = 0, done = 0;
+            S.books.forEach(b => { total += b.chapterCount || 0; done += b.doneCount || 0; });
+            $('#totalChips').textContent = `${fa(done)} / ${fa(total)} فصل تمام شده`;
+            const list = filteredSortedBooks();
+            const cc = $('#bookCountChip'); if (cc) cc.textContent = `${fa(list.length)} از ${fa(S.books.length)} کتاب`;
             const box = $('#books'); box.innerHTML = '';
             if (!S.books.length) {
                 box.innerHTML = '<div class="empty" style="grid-column:1/-1">هیچ کتابی پیدا نشد.<br>پوشهٔ <span class="mono">books/&lt;book_name&gt;/</span> را بساز و فایل فصل‌ها (<span class="mono">.txt / .md / .docx</span>) را داخلش بگذار.</div>';
+                return;
             }
-            S.books.forEach(b => {
-                total += b.chapterCount; done += b.doneCount;
-                const p = b.chapterCount ? Math.round(b.doneCount / b.chapterCount * 100) : 0;
+            if (!list.length) {
+                box.innerHTML = '<div class="empty" style="grid-column:1/-1">کتابی با این جستجو / فیلتر پیدا نشد.<br>جستجو یا فیلترها را عوض کن.</div>';
+                return;
+            }
+            list.forEach(b => {
+                const p = b.percent ?? (b.chapterCount ? Math.round(b.doneCount / b.chapterCount * 100) : 0);
+                const status = b.status || (b.doneCount >= b.chapterCount && b.chapterCount > 0 ? 'completed' : (b.doneCount > 0 ? 'in-progress' : 'not-started'));
                 const el = document.createElement('div'); el.className = 'book';
                 el.innerHTML = `
       <div class="top">
@@ -1963,8 +2160,9 @@
         <div style="flex:1;min-width:0">
           <h3>${esc(b.name)}</h3>
           <div class="row" style="gap:5px;margin-top:6px">
-            ${b.doneCount >= b.chapterCount && b.chapterCount > 0 ? '<span class="chip gr">تکمیل شده</span>' : ''}
-            ${b.trCount ? `<span class="chip vi">tr: ${fa(b.trCount)}</span>` : ''}
+            ${status === 'completed' ? '<span class="chip gr">تکمیل شده</span>' : (status === 'in-progress' ? '<span class="chip cy">در حال انجام</span>' : '<span class="chip">شروع نشده</span>')}
+            ${b.trCount ? `<span class="chip vi" title="ترجمهٔ آماده در پوشه tr">tr: ${fa(b.trCount)}</span>` : ''}
+            ${(b.trPending > 0) ? `<span class="chip vi" title="این فصل‌ها ترجمهٔ آماده دارند و از ویرایش شروع می‌شوند">✍️ از ویرایش: ${fa(b.trPending)}</span>` : ''}
             ${b.hasGlossary ? '<span class="chip am">واژه‌نامه</span>' : ''}
           </div>
         </div>
@@ -1973,14 +2171,13 @@
       <div class="foot"><span>${fa(b.doneCount)} از ${fa(b.chapterCount)} فصل</span><span class="chip cy">${fa(p)}٪</span></div>
       <div class="row" style="margin-top:10px">
         <button class="btn sm btn-go act-open" style="flex:1">باز کردن نقشه</button>
-        <button class="btn sm act-robot" title="انتخاب فصل‌ها و سپردن به ربات">🤖 ربات</button>
+        <button class="btn sm act-robot" title="انتخاب فصل‌ها و سپردن به ربات (فصل‌های tr از ویرایش شروع می‌شوند)">🤖 ربات</button>
       </div>`;
                 el.querySelector('.act-open').onclick = (e) => { e.stopPropagation(); openBook(b.name); };
                 el.querySelector('.act-robot').onclick = (e) => { e.stopPropagation(); queueWholeBook(b.name); };
                 el.style.cursor = 'default';
                 box.appendChild(el);
             });
-            $('#totalChips').textContent = `${fa(done)} / ${fa(total)} فصل تمام شده`;
         }
 
         async function loadChrome() {
@@ -2017,31 +2214,70 @@
             renderMap();
             show('map');
         }
+        function filteredSortedChapters() {
+            const q = (S.chSearch || '').trim().toLowerCase();
+            let list = S.chapters.map((c, i) => ({ c, i })).filter(({ c, i }) => {
+                if (S.filter && c.done) return false;
+                if (q) {
+                    const hay = (String(c.name || '') + ' ' + String(c.file || '') + ' ' + (i + 1)).toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                const f = S.chStatus || 'all';
+                if (f === 'done' && !c.done) return false;
+                if (f === 'undone' && c.done) return false;
+                if (f === 'in-progress' && !(c.done === false && (c.step || 0) > 0)) return false;
+                if (f === 'untouched' && !(c.done === false && !(c.step > 0))) return false;
+                if (f === 'has-tr' && !c.hasTr) return false;
+                if (f === 'no-tr' && c.hasTr) return false;
+                if (f === 'tr-importable' && !(c.hasTr && !c.done && !(c.step > 0))) {
+                    // trImportable from server if present, else derive
+                    if (!(c.trImportable || (c.hasTr && !c.done))) return false;
+                }
+                return true;
+            });
+            if (S.chSort === 'index-desc') list.sort((a, b) => b.i - a.i);
+            else if (S.chSort === 'name-asc') list.sort((a, b) => String(a.c.name).localeCompare(String(b.c.name), undefined, { numeric: true, sensitivity: 'base' }));
+            else if (S.chSort === 'name-desc') list.sort((a, b) => String(b.c.name).localeCompare(String(a.c.name), undefined, { numeric: true, sensitivity: 'base' }));
+            else if (S.chSort === 'status') list.sort((a, b) => Number(a.c.done || false) - Number(b.c.done || false) || (a.c.step || 0) - (b.c.step || 0) || (a.i - b.i));
+            else list.sort((a, b) => a.i - b.i);
+            return list;
+        }
         function renderMap() {
             const done = S.chapters.filter(c => c.done).length, total = S.chapters.length;
             const p = total ? Math.round(done / total * 100) : 0;
             $('#mapBar').style.width = p + '%';
             $('#mapBarTxt').textContent = `${fa(done)} از ${fa(total)} فصل FINISHED • ${fa(p)}٪ پیشرفت کتاب`;
             const firstUndone = S.chapters.findIndex(c => !c.done);
+            const trN = S.chapters.filter(c => c.hasTr).length;
+            const trImp = S.chapters.filter(c => c.trImportable || (c.hasTr && !c.done && !(c.step > 0))).length;
             $('#mapChips').innerHTML =
                 `<span class="chip cy">بعدی: ${firstUndone < 0 ? '—' : esc(S.chapters[firstUndone].name)}</span>` +
-                (S.chapters.some(c => c.hasTr) ? `<span class="chip vi">tr آماده: ${fa(S.chapters.filter(c => c.hasTr).length)}</span>` : '') +
+                (trN ? `<span class="chip vi">tr آماده: ${fa(trN)}</span>` : '') +
+                (trImp ? `<span class="chip vi">✍️ شروع از ویرایش: ${fa(trImp)}</span>` : '') +
                 `<span class="chip">واژه‌نامه: ${S.chapters.some(c => c.glossary) ? 'دارد' : 'ندارد'}</span>`;
+            const btnImp = $('#btnImportTr');
+            if (btnImp) {
+                btnImp.style.display = trImp ? '' : 'none';
+                btnImp.textContent = `📥 شروع از ویرایش (${fa(trImp)})`;
+            }
+            const list = filteredSortedChapters();
+            const cc = $('#chCountChip'); if (cc) cc.textContent = `${fa(list.length)} از ${fa(total)} فصل`;
             const grid = $('#mapGrid'); grid.innerHTML = '';
-            S.chapters.forEach((c, i) => {
-                if (S.filter && c.done) return;
+            list.forEach(({ c, i }) => {
                 const t = document.createElement('button');
                 t.className = 'tile' + (c.done ? ' done' : '') + (i === firstUndone ? ' cur' : '');
                 const st = [c.step >= 1, c.step >= 2, c.step >= 3 || c.done];
+                const startHint = !c.done && (c.trImportable || (c.hasTr && !(c.step > 0))) ? '✍️' : '';
+                t.title = !c.done && c.hasTr ? 'ترجمهٔ آماده دارد — از ویرایش شروع می‌شود' : '';
                 t.innerHTML = `
-      <div class="idx">فصل ${fa(i + 1)}</div>
+      <div class="idx">فصل ${fa(i + 1)} ${startHint}</div>
       <div class="nm">${esc(c.name)}</div>
       <div class="pips">${st.map((f, k) => `<span class="pip ${f ? 'f' + (k + 1) : ''}"></span>`).join('')}</div>
-      ${c.done ? '<span class="flag chip gr">FINISHED</span>' : (c.step > 0 ? `<span class="flag chip am">${esc(STEP_NAMES[c.step])}</span>` : (c.hasTr ? '<span class="flag chip vi">tr</span>' : ''))}`;
+      ${c.done ? '<span class="flag chip gr">FINISHED</span>' : ((c.trImportable || (c.hasTr && !(c.step > 0))) ? '<span class="flag chip vi">از ویرایش</span>' : (c.step > 0 ? `<span class="flag chip am">${esc(STEP_NAMES[c.step] || '')}</span>` : (c.hasTr ? '<span class="flag chip vi">tr</span>' : '')))}`;
                 t.onclick = () => openChapter(i);
                 grid.appendChild(t);
             });
-            if (!grid.children.length) grid.innerHTML = '<div class="empty" style="grid-column:1/-1">فصلی یافت نشد.</div>';
+            if (!grid.children.length) grid.innerHTML = '<div class="empty" style="grid-column:1/-1">فصلی با این جستجو / فیلتر یافت نشد.</div>';
         }
         function resume() {
             const i = S.chapters.findIndex(c => !c.done);
@@ -2063,15 +2299,31 @@
             $('#btnCopyGloss').style.display = d.glossaryCount > 0 ? '' : 'none';
             $('#btnCopyGloss').innerHTML = `📚 کپی متن + واژه‌نامه (${fa(d.glossaryCount)})`;
             $('#btnLoadTr').style.display = d.tr.exists ? '' : 'none';
-            $('#btnLoadTr').innerHTML = '📥 بارگذاری و کپی ترجمهٔ آماده (' + esc(d.tr.file || 'tr') + ')';
-            $('#trChip').textContent = d.tr.exists ? 'آماده در tr' : '—';
+            $('#btnLoadTr').innerHTML = '📥 بارگذاری و کپی ترجمهٔ آماده (' + esc(d.tr.file || 'tr') + ') — شروع از ویرایش';
+            $('#trChip').textContent = d.tr.exists ? 'آماده در tr — از ویرایش شروع کن' : '—';
             $('#trChip').className = 'chip ' + (d.tr.exists ? 'vi' : '');
+            const hadInput = !!(d.texts.inputTranslation || '').trim();
+            const trFallback = !hadInput && d.tr.exists && d.tr.text;
             $('#inTranslation').value = d.texts.inputTranslation || (d.tr.exists ? d.tr.text : '') || '';
             $('#editedText').value = d.texts.editedText || '';
             $('#finalText').value = d.texts.finalText || '';
             $('#saveText').value = d.texts.saveText || d.texts.finalText || d.texts.editedText || '';
             $$('#screen-work textarea').forEach(t => t.dispatchEvent(new Event('input')));
-            goStep(d.done ? 3 : Math.min(d.step || 0, 3), true);
+            // Chapters with a ready-made tr translation skip TRANSLATE: persist the
+            // tr text as step-1 input once, then open the workbench at EDIT.
+            let step = d.done ? 3 : Math.min(d.step || 0, 3);
+            if (!d.done && trFallback) {
+                try {
+                    await POST(`/api/books/${enc(S.book)}/chapter/${enc(d.file)}/use-tr`);
+                    S.ch.step = Math.max(S.ch.step || 0, 1);
+                    const cc = S.chapters[S.idx]; if (cc) { cc.step = Math.max(cc.step || 0, 1); }
+                    step = 1;
+                    toast('📥 ترجمهٔ آماده (tr) ثبت شد — از مرحلهٔ ویرایش شروع کن', 'info', 3200);
+                } catch (e) { step = 1; }
+            } else if (!d.done && d.tr.exists && (d.step || 0) === 0 && hadInput) {
+                step = 1; // translation input already present -> suggest editing
+            }
+            goStep(step, true);
             if (d.done) renderDone(true);
             else $('#doneBanner').innerHTML = '';
             show('work');
@@ -2226,6 +2478,80 @@
         };
         $('#btnResume').onclick = resume;
         $('#onlyUnfinished').onchange = e => { S.filter = e.target.checked; renderMap(); };
+        /* books toolbar: search / sort / filter (div dropdowns) */
+        $('#bookSearch').oninput = e => { S.bookSearch = e.target.value; renderBooks(); };
+        const bookSortDD = makeDropdown($('#bookSort'), 'مرتب‌سازی…');
+        bookSortDD.setOptions([
+            { value: 'name-asc', label: 'نام: الفبا ↑' },
+            { value: 'name-desc', label: 'نام: الفبا ↓' },
+            { value: 'progress-desc', label: 'پیشرفت: بیشتر ↑' },
+            { value: 'progress-asc', label: 'پیشرفت: کمتر ↑' },
+            { value: 'chapters-desc', label: 'فصل: بیشتر' },
+            { value: 'chapters-asc', label: 'فصل: کمتر' },
+            { value: 'done-desc', label: 'تمام‌شده: بیشتر' },
+            { value: 'tr-desc', label: 'tr آماده: بیشتر' }
+        ]);
+        bookSortDD.value = S.bookSort;
+        bookSortDD.onChange = v => { S.bookSort = v; renderBooks(); };
+        const bookStatusDD = makeDropdown($('#bookStatusFilter'), 'وضعیت…');
+        bookStatusDD.setOptions([
+            { value: 'all', label: 'همهٔ وضعیت‌ها' },
+            { value: 'completed', label: 'تکمیل شده' },
+            { value: 'in-progress', label: 'در حال انجام' },
+            { value: 'not-started', label: 'شروع نشده' }
+        ]);
+        bookStatusDD.value = S.bookStatus;
+        bookStatusDD.onChange = v => { S.bookStatus = v; renderBooks(); };
+        const bookFlagDD = makeDropdown($('#bookFlagFilter'), 'ویژگی…');
+        bookFlagDD.setOptions([
+            { value: 'all', label: 'همهٔ کتاب‌ها' },
+            { value: 'has-tr', label: 'دارای tr آماده' },
+            { value: 'tr-importable', label: 'قابل شروع از ویرایش (tr)' },
+            { value: 'has-glossary', label: 'دارای واژه‌نامه' },
+            { value: 'no-glossary', label: 'بدون واژه‌نامه' }
+        ]);
+        bookFlagDD.value = S.bookFlag;
+        bookFlagDD.onChange = v => { S.bookFlag = v; renderBooks(); };
+        /* chapters toolbar: search / sort / filter (div dropdowns) */
+        $('#chSearch').oninput = e => { S.chSearch = e.target.value; renderMap(); };
+        const chSortDD = makeDropdown($('#chSort'), 'مرتب‌سازی…');
+        chSortDD.setOptions([
+            { value: 'index-asc', label: 'ترتیب طبیعی ↑' },
+            { value: 'index-desc', label: 'ترتیب طبیعی ↓' },
+            { value: 'name-asc', label: 'نام: الفبا ↑' },
+            { value: 'name-desc', label: 'نام: الفبا ↓' },
+            { value: 'status', label: 'وضعیت: ناتمام اول' }
+        ]);
+        chSortDD.value = S.chSort;
+        chSortDD.onChange = v => { S.chSort = v; renderMap(); };
+        const chStatusDD = makeDropdown($('#chStatusFilter'), 'فیلتر…');
+        chStatusDD.setOptions([
+            { value: 'all', label: 'همهٔ فصل‌ها' },
+            { value: 'done', label: 'تمام‌شده (FINISHED)' },
+            { value: 'undone', label: 'ناتمام' },
+            { value: 'in-progress', label: 'در حال انجام (قدم>۰)' },
+            { value: 'untouched', label: 'دست‌نخورده (قدم ۰)' },
+            { value: 'has-tr', label: 'دارای tr آماده' },
+            { value: 'tr-importable', label: 'قابل شروع از ویرایش' },
+            { value: 'no-tr', label: 'بدون tr' }
+        ]);
+        chStatusDD.value = S.chStatus;
+        chStatusDD.onChange = v => { S.chStatus = v; renderMap(); };
+        $('#btnImportTr').onclick = async () => {
+            if (!S.book) return;
+            const trImp = S.chapters.filter(c => c.trImportable || (c.hasTr && !c.done && !(c.step > 0))).length;
+            const ok = await modal({
+                title: '📥 شروع از ویرایش (tr)',
+                body: `ترجمه‌های آمادهٔ پوشهٔ tr برای ${fa(trImp)} فصل به‌عنوان ورودی ویرایش ثبت می‌شوند. این فصل‌ها مرحلهٔ ترجمه را رد می‌کنند و از ویرایش شروع می‌شوند. ادامه می‌دهی؟`,
+                ok: 'بله، ثبت کن', cancel: 'بی‌خیال'
+            });
+            if (!ok) return;
+            try {
+                const r = await POST('/api/books/' + enc(S.book) + '/import-tr');
+                toast(`📥 ${fa(r.imported)} فصل از ویرایش شروع می‌شوند`, 'ok', 3500);
+                await openBook(S.book);
+            } catch (e) { toast(e.message, 'err'); }
+        };
         $('#btnResetBook').onclick = async () => {
             const ok = await modal({ title: 'پاک کردن پیشرفت کتاب', body: 'همهٔ فایل‌های JSON پوشهٔ translated و وضعیت مراحل حذف می‌شوند. مطمئنی؟ (فایل‌های اصلی و tr دست‌نخورده می‌مانند)', ok: 'بله، پاک کن', cancel: 'بی‌خیال', danger: true });
             if (!ok) return;
@@ -2264,8 +2590,10 @@
         $('#btnLoadTr').onclick = async () => {
             if (!S.ch.tr.exists) { toast('پوشهٔ tr برای این فصل خالی است', 'warn'); return; }
             $('#inTranslation').value = S.ch.tr.text; $('#inTranslation').dispatchEvent(new Event('input'));
+            try { await POST(`/api/books/${enc(S.book)}/chapter/${enc(S.ch.file)}/use-tr`); S.ch.step = Math.max(S.ch.step || 0, 1); } catch (e) { await saveProgress(1); }
             await copyText(S.ch.tr.text, 'ترجمهٔ آماده (tr)');
-            toast('حالا پرامپت ویرایش را در AI بچسبان', 'info', 3500);
+            toast('📥 tr به‌عنوان ورودی ویرایش ثبت شد — حالا پرامپت ویرایش را در AI بچسبان', 'info', 3500);
+            if (S.step === 0) goStep(1);
         };
         $('#btnPasteIn').onclick = () => pasteInto('#inTranslation', 'ترجمهٔ خام چسبانده شد');
         $('#btnPasteEdited').onclick = () => pasteInto('#editedText', 'ترجمهٔ ویرایش‌شده چسبانده شد');
@@ -2359,13 +2687,17 @@
         async function pickChaptersModal(bookName, chapters) {
             const rows = chapters.map((c, i) => {
                 const st = c.done ? '✓' : (c.step > 0 ? STEP_NAMES[c.step] : 'جدید');
+                const fromEdit = !c.done && (c.trImportable || (c.hasTr && !(c.step > 0)));
                 return `<label class="optline pick-row" style="margin:0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;cursor:pointer">` +
                     `<input type="checkbox" data-file="${esc(c.file)}" checked> ` +
                     `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fa(i + 1)} — ${esc(c.name)}</span> ` +
+                    (fromEdit ? '<span class="chip vi">از ویرایش</span>' : (c.hasTr ? '<span class="chip vi">tr</span>' : '')) +
                     `<span class="chip">${esc(st)}</span></label>`;
             }).join('');
 
+            const trN = chapters.filter(c => !c.done && (c.trImportable || (c.hasTr && !(c.step > 0)))).length;
             const bodyHtml =
+                (trN ? `<div class="small muted" style="margin-bottom:8px">✍️ ${fa(trN)} فصل ترجمهٔ آماده (tr) دارند و ربات آن‌ها را از <b>ویرایش</b> شروع می‌کند (نه ترجمه).</div>` : '') +
                 `<div class="row" style="margin-bottom:10px">` +
                 `<label class="optline" style="margin:0"><input type="checkbox" id="pickAll" checked> همه (${fa(chapters.length)})</label>` +
                 `<span class="small dim" id="pickCount" style="margin-inline-start:auto"></span></div>` +
@@ -2515,8 +2847,8 @@
 
             async function clearQueue() {
                 try {
-                    await POST('/api/robot/clear');
-                    toast('صف ربات خالی شد', 'warn');
+                    const r = await POST('/api/robot/clear', { cancelActive: true });
+                    toast(`صف ربات خالی شد — ${fa(r.removed || 0)} حذف، ${fa(r.cancelled || 0)} لغو`, 'warn', 3500);
                     refreshRobotChip();
                 } catch (e) {
                     toast(e.message, 'err');
@@ -2562,10 +2894,168 @@
             refreshRobotChip();
         })();
 
+        /* ===================== PARALLEL DISPATCH ===================== */
+        /* div-based themed dropdown: floats above page content (z-index 500),
+           closes on outside-click / Escape */
+        function makeDropdown(el, placeholder) {
+            const btn = el.querySelector('.cselect-btn'),
+                lbl = el.querySelector('.lbl'),
+                menu = el.querySelector('.cselect-menu');
+            let opts = [], val = '', cb = null;
+            function paint() {
+                const cur = opts.find(o => o.value === val);
+                lbl.textContent = cur ? cur.label : placeholder;
+                lbl.title = cur ? cur.label : '';
+                menu.innerHTML = '';
+                if (!opts.length) { menu.innerHTML = '<div class="cselect-empty">— خالی —</div>'; return; }
+                opts.forEach(o => {
+                    const it = document.createElement('div');
+                    it.className = 'cselect-item' + (o.value === val ? ' sel' : '');
+                    it.textContent = o.label; it.title = o.label;
+                    it.onclick = e => { e.stopPropagation(); set(o.value); close(); if (cb) cb(val); };
+                    menu.appendChild(it);
+                });
+            }
+            function set(v) { val = v; paint(); }
+            function close() { el.classList.remove('open'); }
+            btn.onclick = e => {
+                e.stopPropagation();
+                if (el.classList.contains('open')) close();
+                else {
+                    document.querySelectorAll('.cselect.open').forEach(x => { if (x !== el) x.classList.remove('open'); });
+                    el.classList.add('open');
+                }
+            };
+            paint();
+            return {
+                setOptions(list, keep) {
+                    opts = list || [];
+                    if (!opts.some(o => o.value === val)) val = (keep && val) ? val : (opts[0] ? opts[0].value : '');
+                    paint();
+                },
+                get value() { return val; },
+                set value(v) { set(v); },
+                onChange(fn) { cb = fn; }
+            };
+        }
+        document.addEventListener('click', () => document.querySelectorAll('.cselect.open').forEach(x => x.classList.remove('open')));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.cselect.open').forEach(x => x.classList.remove('open')); });
+
+        (function () {
+            const batch = [];
+            const table = $('#workersTable'), chip = $('#workersChip');
+            const dBookEl = $('#dBook'), dFrom = $('#dFrom'), dTo = $('#dTo'), dWorkerEl = $('#dWorker');
+            const list = $('#assignList');
+            if (!table || !dBookEl || !dWorkerEl) return;
+            const dBook = makeDropdown(dBookEl, 'انتخاب کتاب…');
+            const dWorker = makeDropdown(dWorkerEl, 'انتخاب پروفایل…');
+
+            function syncBookOptions() {
+                const before = dBook.value;
+                dBook.setOptions((S.books || []).map(b => ({ value: b.name, label: `${b.name} (${b.chapterCount})` })), true);
+                if (!before && S.book) dBook.value = S.book;
+            }
+            function syncWorkerOptions(workers) {
+                dWorker.setOptions((workers || []).map(w => ({ value: w.name, label: w.name })), true);
+            }
+            function renderBatch() {
+                list.innerHTML = '';
+                if (!batch.length) {
+                    list.innerHTML = '<div class="small dim">دسته خالی است — مثلاً: shepherd_wizard فصل ۱ تا ۱۰ → farhadking</div>';
+                    return;
+                }
+                batch.forEach((a, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.style.cssText = 'border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px';
+                    row.innerHTML = `<span>📕 <b>${esc(a.book)}</b> — فصل ${fa(a.from)} تا ${fa(a.to)} → 👤 <b>${esc(a.worker)}</b></span>`;
+                    const rm = document.createElement('button');
+                    rm.className = 'btn sm btn-rd'; rm.textContent = '✖';
+                    rm.onclick = () => { batch.splice(i, 1); renderBatch(); };
+                    row.appendChild(rm);
+                    list.appendChild(row);
+                });
+            }
+            async function loadWorkers() {
+                try {
+                    const d = await GET('/api/robot/workers');
+                    const workers = d.workers || [];
+                    syncBookOptions(); syncWorkerOptions(workers);
+                    const busy = workers.filter(w => (w.queued || 0) > 0 || (w.active || 0) > 0).length;
+                    if (chip) chip.textContent = busy ? `${fa(busy)} پروفایل مشغول` : 'هر ۳ پروفایل آزاد';
+                    table.innerHTML = '';
+                    workers.forEach(w => {
+                        const row = document.createElement('div');
+                        row.className = 'row';
+                        row.style.cssText = 'border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12px';
+                        const st = w.online === null ? '<span class="chip">؟</span>'
+                            : (w.online ? '<span class="chip gr">🟢 آنلاین</span>' : '<span class="chip rd">⚪ آفلاین</span>');
+                        const cur = w.current ? `<span class="small dim">${esc(w.current.book)} / ${esc(w.current.chapter)} (${esc(w.current.type)})</span>` : '<span class="small dim">بیکار</span>';
+                        row.innerHTML = `<span>👤 <b>${esc(w.name)}</b></span>${st}<span class="chip cy">صف: ${fa(w.queued || 0)}</span>${cur}`;
+                        const cb = document.createElement('button');
+                        cb.className = 'btn sm'; cb.textContent = '✖ خالی کردن';
+                        cb.title = 'صف این پروفایل خالی + کارهای در حال انجامش لغو شود (نتیجهٔ دیرهنگام نادیده گرفته می‌شود)';
+                        cb.onclick = async () => {
+                            cb.disabled = true;
+                            try {
+                                const r = await POST('/api/robot/clear', { worker: w.name, cancelActive: true });
+                                toast(`صف ${w.name} خالی شد — ${fa(r.removed || 0)} حذف، ${fa(r.cancelled || 0)} لغو`, 'warn', 3500);
+                                loadWorkers();
+                                if (typeof refreshRobotChipGlobal === 'function') refreshRobotChipGlobal();
+                            }
+                            catch (e) { toast(e.message, 'err'); }
+                            cb.disabled = false;
+                        };
+                        row.appendChild(cb);
+                        table.appendChild(row);
+                    });
+                    if (!workers.length) table.innerHTML = '<div class="empty">پروفایلی پیدا نشد.</div>';
+                } catch (e) { if (chip) chip.textContent = 'آفلاین'; }
+            }
+            $('#btnAddAssign').onclick = () => {
+                const book = dBook.value, worker = dWorker.value;
+                let from = Math.max(1, Number(dFrom.value) || 1), to = Math.max(1, Number(dTo.value) || from);
+                if (!book) { toast('کتاب را انتخاب کن', 'warn'); return; }
+                if (!worker) { toast('پروفایل را انتخاب کن', 'warn'); return; }
+                if (to < from) [from, to] = [to, from];
+                batch.push({ book, from, to, worker });
+                renderBatch();
+                toast(`افزوده شد: ${book} ${from}–${to} → ${worker}`, 'info', 1800);
+            };
+            $('#btnDispatch').onclick = async () => {
+                if (!batch.length) { toast('دسته خالی است — اول بازه اضافه کن', 'warn'); return; }
+                const btn = $('#btnDispatch'); btn.disabled = true;
+                try {
+                    const r = await POST('/api/robot/dispatch', { assignments: batch });
+                    const tot = (r.summary || []).reduce((n, s) => n + (s.queued || 0), 0);
+                    const det = (r.summary || []).map(s => `${s.book} ${s.from}–${s.to} → ${s.owner || 'any'}: ${s.queued} در صف`).join(' • ');
+                    toast(`🚀 ${fa(tot)} فصل در صف پروفایل‌ها قرار گرفت`, 'ok', 4500);
+                    if (det) console.log('[dispatch]', det);
+                    batch.length = 0; renderBatch();
+                    loadWorkers();
+                    if (typeof refreshRobotChipGlobal === 'function') refreshRobotChipGlobal();
+                } catch (e) { toast(e.message, 'err', 4000); }
+                btn.disabled = false;
+            };
+            $('#btnReleaseAll').onclick = async () => {
+                try { const r = await POST('/api/robot/release', {}); toast(`↩ ${fa(r.released || 0)} کار به صف مشترک برگشت`, 'warn'); loadWorkers(); }
+                catch (e) { toast(e.message, 'err'); }
+            };
+            const bw = $('#btnWorkersRefresh'); if (bw) bw.onclick = loadWorkers;
+            renderBatch(); loadWorkers();
+            // Don't steal the table / dropdown from under the user's cursor:
+            // skip auto-refresh while hovering the table or a menu is open.
+            setInterval(() => {
+                if (!$('#screen-home')?.classList.contains('active')) return;
+                if (table.matches(':hover')) return;
+                if (document.querySelector('.cselect.open')) return;
+                loadWorkers();
+            }, 4000);
+        })();
+
         /* ===================== LOG VIEWER ===================== */
         (function () {
             const logView = $('#logView');
-            const logSource = $('#logSource');
             const logSearch = $('#logSearch');
             const btnRefreshLogs = $('#btnRefreshLogs');
             const btnClearLogs = $('#btnClearLogs');
@@ -2573,10 +3063,20 @@
             if (!logView) return;
 
             let logTimer = null;
+            let logSourceVal = 'all';
+            const logSourceDD = makeDropdown($('#logSource'), 'منبع…');
+            logSourceDD.setOptions([
+                { value: 'all', label: 'همه' },
+                { value: 'server', label: 'server' },
+                { value: 'background', label: 'background' },
+                { value: 'content', label: 'content' }
+            ]);
+            logSourceDD.value = 'all';
+            logSourceDD.onChange = v => { logSourceVal = v; refreshLogs(); };
 
             async function refreshLogs() {
                 try {
-                    const source = logSource ? logSource.value : 'all';
+                    const source = logSourceVal || 'all';
                     const search = encodeURIComponent((logSearch && logSearch.value) || '');
                     const d = await GET(`/api/logs?limit=300&source=${encodeURIComponent(source)}&search=${search}`);
 
@@ -2595,8 +3095,6 @@
                     if (document.getElementById('screen-home')?.classList.contains('active')) refreshLogs();
                 }, 4000);
             }
-
-            if (logSource) logSource.onchange = refreshLogs;
 
             if (logSearch) {
                 logSearch.oninput = () => {
@@ -2628,6 +3126,7 @@
                 title: 'راهنمای سریع', ok: 'بزن بریم', html: true, body: `
     <ol class="steps-help">
       <li><b>ربات (خودکار):</b> روی هر کتاب دکمهٔ 🤖 را بزن — همهٔ فصل‌های ناتمام در صف می‌روند. افزونه NovelBot بقیه را انجام می‌دهد.</li>
+      <li><b>موازی (۳ پروفایل):</b> در پاپ‌آپ هر افزونه نام پروفایلش را بگذار و هر سه را ▶ شروع بزن؛ بعد در کارت «توزیع موازی» بازه‌ها را تقسیم کن (مثلاً فصل ۱–۱۰ → farhadking).</li>
       <li><b>دستی:</b> «باز کردن نقشه» → یک فصل را انتخاب کن → مراحل ترجمه ← ویرایش ← بازبینی ← ثبت.</li>
       <li><b>کروم:</b> در صورت نیاز، پروفایل‌های کاری را از بخش بالای خانه باز کن.</li>
     </ol>

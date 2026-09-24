@@ -12,6 +12,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 let state = {
   running: false,
   preferred: 'gemini',
+  // Worker identity = the chrome profile name (farhadking / farhad.oo /
+  // farzincook). The server assigns chapter ranges to workers; this extension
+  // only picks up jobs owned by its worker (plus unassigned ones). Empty =
+  // shared pool only (receives NO assigned jobs).
+  workerId: '',
   tabId: null,
   lastReloadAt: 0,
   lastChatKey: null,
@@ -112,6 +117,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
 
+  if (msg.type === 'SET_WORKER') {
+    state.workerId = String(msg.workerId || '').trim().slice(0, 64);
+    saveState();
+    log('info', 'worker identity set', { workerId: state.workerId || '(anonymous)' });
+    sendResponse({ ok: true, workerId: state.workerId });
+    return false;
+  }
+
   if (msg.type === 'START') {
     startBot().then(() => sendResponse(state));
     return true;
@@ -145,7 +158,10 @@ async function startBot() {
   state.running = true;
   state.stats.startedAt = Date.now();
   await saveState();
-  await log('info', 'bot started', { preferred: state.preferred });
+  await log('info', 'bot started', { preferred: state.preferred, workerId: state.workerId || '(anonymous)' });
+  if (!state.workerId) {
+    await log('warn', 'no worker identity set — assigned jobs will NOT be picked up; set the profile name in the popup', {});
+  }
   await pollAndExecute();
 }
 
@@ -161,7 +177,8 @@ async function pollAndExecute() {
   busy = true;
 
   try {
-    const r = await fetch(SERVER + '/api/robot/jobs?limit=1');
+    const workerParam = state.workerId ? '?limit=1&worker=' + encodeURIComponent(state.workerId) : '?limit=1';
+    const r = await fetch(SERVER + '/api/robot/jobs' + workerParam);
     if (!r.ok) return;
 
     const data = await r.json();
@@ -172,7 +189,7 @@ async function pollAndExecute() {
     const c = await fetch(SERVER + '/api/robot/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: meta.id })
+      body: JSON.stringify({ id: meta.id, worker: state.workerId || undefined })
     });
 
     const cd = await c.json().catch(() => ({}));
@@ -186,7 +203,9 @@ async function pollAndExecute() {
       id: job.id,
       book: job.book,
       chapter: job.chapter,
-      inputChars: (job.input || '').length
+      inputChars: (job.input || '').length,
+      owner: job.owner || 'any',
+      workerId: state.workerId || '(anonymous)'
     });
 
     const tab = await ensureAiTab(state.preferred);
@@ -299,6 +318,7 @@ async function failJob(jobId, error) {
 
 async function handleResult(payload) {
   try {
+    if (state.workerId && !payload.worker) payload.worker = state.workerId;
     const r = await fetch(SERVER + '/api/robot/result', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
