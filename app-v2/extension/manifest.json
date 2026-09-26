@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "NovelBot",
+  "version": "1.3.0",
+  "description": "Auto-translates web novel chapters via Gemini / ChatGPT",
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://gemini.google.com/*",
+    "https://chatgpt.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["adapters/gemini.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["adapters/chatgpt.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translation AI Manager</title>
+  <style>
+    :root {
+      --bg-base: #0f111a; --bg-panel: #1a1c29; --bg-console: #000000;
+      --border: #2a2d3d; --border-focus: #3b82f6;
+      --text-main: #e2e8f0; --text-muted: #94a3b8;
+      --primary: #3b82f6; --primary-hover: #2563eb;
+      --secondary: #4b5563; --secondary-hover: #374151;
+      --danger: #ef4444; --danger-hover: #dc2626;
+      --radius: 8px;
+      --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", Consolas, "Courier New", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg-base); color: var(--text-main); font-family: var(--font-ui); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .server-status { position: fixed; top: 0; left: 0; right: 0; background-color: var(--danger); color: white; text-align: center; padding: 12px; font-weight: 600; z-index: 9999; transform: translateY(0); transition: transform 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .server-status.hidden { transform: translateY(-100%); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #33364b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4b4f6e; }
+    .topbar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+    .brand { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
+    .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 50; }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-content { background: var(--bg-panel); width: 100%; max-width: 800px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; transform: translateY(20px); transition: transform 0.2s ease; max-height: 90vh; }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+    .modal-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 1.25rem; font-weight: 600; }
+    .btn-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+    .btn-close:hover { color: var(--text-main); }
+    .modal-body { padding: 24px; overflow-y: auto; }
+    .modal-footer { padding: 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+    .btn-cancel { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-group label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+    input, select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.95rem; background: var(--bg-base); color: var(--text-main); outline: none; transition: all 0.2s ease; appearance: none; }
+    select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 14px top 50%; background-size: 10px auto; }
+    input:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
+    .btn-small { background: var(--secondary); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; text-transform: none; }
+    .btn-small:hover { background: var(--secondary-hover); }
+    .main { padding: 32px; overflow-y: auto; flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 24px; align-content: start; }
+    .task-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); overflow: hidden; }
+    .task-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+    .task-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
+    .btn-stop { background: transparent; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; color: var(--danger); transition: all 0.2s ease; }
+    .btn-stop:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger-hover); }
+    .console { flex: 1; background: var(--bg-console); color: #a9b1d6; padding: 16px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; }
+    .console p { margin-bottom: 6px; word-wrap: break-word; }
+    .log-info    { color: #7aa2f7; }
+    .log-success { color: #9ece6a; }
+    .log-warn    { color: #e0af68; }
+    .log-error   { color: #f7768e; font-weight: bold; }
+    .log-step    { color: #bb9af7; }
+    .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5; margin-top: 15vh; }
+  </style>
+</head>
+<body>
+  <div id="server-status" class="server-status hidden">
+    ⚠️ Connection lost! Please restart the Node server.
+  </div>
+
+  <div class="topbar">
+    <div class="brand">Translation AI Manager</div>
+    <button class="btn-primary" id="btn-new-task" onclick="openModal()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+      New Task
+    </button>
+  </div>
+
+  <div class="main" id="task-container">
+    <div class="empty-state" id="empty-state">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 12px;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <p>No active tasks running.</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        Create New Instance
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Chrome Profile</label>
+            <select id="profile"></select>
+          </div>
+          <div class="form-group">
+            <label>Pipeline Stage</label>
+            <select id="mode" onchange="handleModeChange()">
+              <option value="translate">1. Translate (Input → output/translate)</option>
+              <option value="edit">2. Edit (translate → output/edited)</option>
+              <option value="proof">3. Proof Read (edited → output/proofing)</option>
+              <option value="score">4. Score (proofing → log)</option>
+              <option value="glossary">5. Glossary Filter (input/02.glossary → output/glossary)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Target Book</label>
+            <select id="book"></select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              Chapters Range
+              <span style="display: inline-flex; gap: 6px;">
+                <button class="btn-small" onclick="findMissingChapters()" type="button">Find Missing</button>
+                <button
+                  class="btn-small"
+                  id="btn-proof-insurance"
+                  onclick="findProofInsurance()"
+                  type="button"
+                  style="display: none;"
+                  title="Compare proofed JSON word count with English source. Flags chapters with more than 300 words difference."
+                >
+                  Insurance
+                </button>
+              </span>
+            </label>
+            <input type="text" id="chapters" placeholder="e.g. all, failed, 1-5, 8">
+          </div>
+
+          <div class="form-group">
+            <label title="How many tabs process at the same time">Concurrent Tabs</label>
+            <input type="number" id="concurrentTabs" value="1" min="1" max="5">
+          </div>
+          <div class="form-group">
+            <label>Prompt Injection Method</label>
+            <select id="promptMode">
+              <option value="1">Separate (Once at start)</option>
+              <option value="2">Combined (Every chunk)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chunk Size (Words)</label>
+            <input type="number" id="chunkSize" value="1000" min="200" max="4000">
+          </div>
+          <div class="form-group">
+            <label>Chunk Delay (Seconds)</label>
+            <input type="number" id="chunkDelay" value="20" min="1" max="120">
+          </div>
+          <div class="form-group">
+            <label>AI Chatbot</label>
+            <select id="botName" onchange="updateModels()"></select>
+          </div>
+          <div class="form-group">
+            <label>AI Model</label>
+            <select id="model"></select>
+          </div>
+          <div class="form-group full-width">
+            <label>Prompt Template File</label>
+            <select id="promptFile"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="startTask()">Start Processing</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let configData = {};
+    let ws;
+
+    function connectWebSocket() {
+      ws = new WebSocket(`ws://${window.location.host}`);
+      ws.onopen = () => {
+        document.getElementById('server-status').classList.add('hidden');
+        document.getElementById('btn-new-task').disabled = false;
+        loadConfig();
+      };
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const consoleEl = document.getElementById(`console-${data.taskId}`);
+        if (consoleEl) {
+          const line = document.createElement('p');
+          line.className = `log-${data.level}`;
+          const time = new Date().toLocaleTimeString([], { hour12: false });
+          line.textContent = `[${time}] ${data.msg}`;
+          consoleEl.appendChild(line);
+          consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+      };
+      ws.onclose = () => {
+        document.getElementById('server-status').classList.remove('hidden');
+        document.getElementById('btn-new-task').disabled = true;
+        closeModal();
+        setTimeout(connectWebSocket, 3000);
+      };
+      ws.onerror = () => {};
+    }
+
+    function openModal() { 
+      document.getElementById('taskModal').classList.add('active'); 
+      loadConfig(); // Refresh books every time modal opens
+    }
+    
+    function closeModal() { document.getElementById('taskModal').classList.remove('active'); }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        configData = await res.json();
+        populateSelect('profile', configData.profiles.map(p => ({value: p.id, label: `${p.name} (Port ${p.port})`})));
+        populateSelect('promptFile', configData.prompts.map(p => ({value: p, label: p})));
+        populateSelect('botName', configData.bots.map(b => ({value: b, label: b.toUpperCase()})));
+        updateBooks();
+        updateModels();
+        updateProofInsuranceButton();
+        updateMissingButton();
+      } catch (e) { console.error("Config load failed."); }
+    }
+    function handleModeChange() {
+      updateBooks();
+      updateProofInsuranceButton();
+      updateMissingButton();
+
+      const mode = document.getElementById('mode').value;
+      if (mode === 'translate') document.getElementById('chunkSize').value = '1000';
+      else if (mode === 'edit') document.getElementById('chunkSize').value = '1500';
+      else if (mode === 'glossary') document.getElementById('chunkSize').value = '1000';
+      else document.getElementById('chunkSize').value = '2000';
+    }
+
+    function updateMissingButton() {
+      const btn = document.querySelector('button[onclick="findMissingChapters()"]');
+      if (!btn) return;
+      const mode = document.getElementById('mode').value;
+      btn.style.display = mode === 'glossary' ? 'none' : 'inline-block';
+    }
+
+    function updateBooks() {
+      const mode = document.getElementById('mode').value;
+      let books = [];
+      if (mode === 'translate') books = configData.inputBooks || [];
+      else if (mode === 'edit') books = configData.translateBooks || [];
+      else if (mode === 'proof') books = configData.editedBooks || [];
+      else if (mode === 'score') books = configData.proofedBooks || [];
+      else if (mode === 'glossary') books = configData.glossaryFiles || [];
+      populateSelect('book', books.map(b => ({value: b, label: b})));
+    }
+
+    function updateModels() {
+      if (!configData.models) return;
+      const bot = document.getElementById('botName').value;
+      populateSelect('model', (configData.models[bot] || []).map(m => ({value: m.id, label: m.name})));
+    }
+
+    function populateSelect(id, options) {
+      const el = document.getElementById(id);
+      el.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+    }
+
+    async function findMissingChapters() {
+      const mode = document.getElementById('mode').value;
+      const bookName = document.getElementById('book').value;
+      if (!bookName) return alert("Select a book first.");
+      try {
+        const res = await fetch('/api/check-missing', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode, bookName })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (data.missing.length === 0) { alert("All chapters found!"); }
+        else {
+          document.getElementById('chapters').value = data.missing.join(', ');
+          alert(`Found ${data.missing.length} missing chapters.`);
+        }
+      } catch (e) { alert("Failed: " + e.message); }
+    }
+
+        async function findProofInsurance() {
+      const bookName = document.getElementById('book').value;
+      if (!bookName) return alert("Select a book first.");
+
+      try {
+        const res = await fetch('/api/check-proof-insurance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookName })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        if (!data.checked) {
+          alert("No proofed JSON chapters found for this book.");
+          return;
+        }
+
+        if (data.redo.length === 0) {
+          alert(`All ${data.checked} checked chapters are within 300 words of their English source.`);
+          return;
+        }
+
+        document.getElementById('chapters').value = data.redo.join(', ');
+
+        let msg = `Found ${data.redo.length} chapter(s) needing redo.`;
+        if (data.skippedNoEnglish) {
+          msg += `\nSkipped ${data.skippedNoEnglish} chapter(s) because no English source was found.`;
+        }
+
+        alert(msg);
+      } catch (e) {
+        alert("Failed: " + e.message);
+      }
+    }
+
+    function updateProofInsuranceButton() {
+      const btn = document.getElementById('btn-proof-insurance');
+      if (!btn) return;
+
+      const mode = document.getElementById('mode').value;
+      btn.style.display = mode === 'proof' ? 'inline-block' : 'none';
+    }
+
+    async function startTask() {
+      const mode = document.getElementById('mode').value;
+      let chaptersInput = document.getElementById('chapters').value;
+
+      // For glossary mode, the "book" dropdown contains the exact filename
+      if (mode === 'glossary') {
+        chaptersInput = document.getElementById('book').value;
+      } else {
+        chaptersInput = chaptersInput || 'all';
+      }
+      const payload = {
+        profileId: document.getElementById('profile').value,
+        mode: mode,
+        bookName: document.getElementById('book').value,
+        chapters: chaptersInput,
+        promptMode: document.getElementById('promptMode').value,
+        botName: document.getElementById('botName').value,
+        model: document.getElementById('model').value,
+        promptFile: document.getElementById('promptFile').value,
+        chunkSize: document.getElementById('chunkSize').value,
+        chunkDelay: document.getElementById('chunkDelay').value,
+        concurrentTabs: document.getElementById('concurrentTabs').value
+      };
+      try {
+        const res = await fetch('/api/start', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.error) return alert("Error: " + data.error);
+        document.getElementById('empty-state').style.display = 'none';
+        createTaskCard(data.taskId, data.title);
+        closeModal();
+      } catch (e) { alert("Failed to start task."); }
+    }
+
+    function createTaskCard(taskId, title) {
+      const container = document.getElementById('task-container');
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.id = `task-${taskId}`;
+      card.innerHTML = `
+        <div class="task-header">
+          <div class="task-title" title="${title}">${title}</div>
+          <button class="btn-stop" onclick="stopTask('${taskId}')">Stop</button>
+        </div>
+        <div class="console" id="console-${taskId}">
+          <p class="log-info">[System] Task queued and starting...</p>
+        </div>`;
+      container.insertBefore(card, container.firstChild);
+    }
+
+    async function stopTask(taskId) {
+      if (confirm("Stop this task?")) {
+        await fetch(`/api/stop/${taskId}`, { method: 'DELETE' });
+      }
+    }
+
+    window.onload = connectWebSocket;
+  </script>
+</body>
+</html>
