@@ -39,6 +39,9 @@ const MODE_CONFIG = {
   edit: { srcBase: () => path.join(BASE_OUTPUT_DIR, 'translate'), outBase: () => path.join(BASE_OUTPUT_DIR, 'edited') },
   proof: { srcBase: () => path.join(BASE_OUTPUT_DIR, 'edited'), outBase: () => path.join(BASE_OUTPUT_DIR, 'proofing') },
   score: { srcBase: () => path.join(BASE_OUTPUT_DIR, 'proofing'), outBase: () => path.join(BASE_OUTPUT_DIR, 'proofing') },
+  // Autopilot: full pipeline in one job — input → translate → edited → proofing(JSON).
+  // parseRange/check-missing compare raw input vs final proofing output.
+  auto: { srcBase: () => BASE_INPUT_DIR, outBase: () => path.join(BASE_OUTPUT_DIR, 'proofing') },
   glossary: { srcBase: () => path.join(BASE_INPUT_DIR, 'glossary'), outBase: () => path.join(BASE_OUTPUT_DIR, 'glossary') }
 };
 
@@ -84,18 +87,18 @@ const BOT_CONFIGS = {
       log.trace(`[ds.setup] model=${model}`);
       const modelTypeMap = { instant: 'default', expert: 'expert', vision: 'vision' };
       const btn = page.locator(`[data-model-type="${modelTypeMap[model] || 'default'}"]`);
-      if (await btn.count() > 0) { await btn.click(); await page.waitForTimeout(1500); }
+      if (await btn.count() > 0) { await humanClickLocator(page, btn, log, 'ds.setup'); await page.waitForTimeout(jitter(1500)); }
     },
     sendPrompt: async (page, text, log) => {
       await page.bringToFront().catch(() => { });
-      await page.waitForTimeout(400);
+      await page.waitForTimeout(jitter(400));
       const ta = page.locator('textarea[name="search"]');
       await ta.waitFor({ state: 'visible', timeout: 30000 });
       // Trusted-input path (v1 extension style). Throws PASTE_TRUNCATED on
       // mismatch so pasteAndGetResult's supervision retries handle it.
       await trustedTextareaFill(page, 'textarea[name="search"]', text, log, 'ds.send');
       log.trace(`[ds.send] trusted fill ok (${text.length} chars)`);
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(jitter(1500));
       await page.keyboard.press('Enter');
       log.trace(`[ds.send] Enter pressed`);
     }
@@ -107,9 +110,18 @@ const BOT_CONFIGS = {
     inputSelector: '.ql-editor',
 
     isThinking: async (page, log) => {
+      // Reasoning models spend 60-90s "thinking" before/while answering.
+      // Thinking markers are scoped to message-content so the model-picker
+      // menu can never false-positive (see the old Qwen bug this avoids).
       return (await page.locator(
         'message-content[aria-busy="true"], ' +
+        'message-content mat-progress-bar, ' +
+        'message-content mat-spinner, ' +
+        'message-content [class*="think" i], ' +
+        'message-content [class*="skeleton" i], ' +
+        'message-content .generating-indicator, ' +
         'button[aria-label*="Stop generating"], ' +
+        'button[aria-label*="stop" i], ' +
         '.generating-indicator, ' +
         '.skeleton-loader'
       ).count()) > 0;
@@ -122,8 +134,8 @@ const BOT_CONFIGS = {
         const dismissBtns = page.locator('button:has-text("Accept"), button:has-text("Got it"), button:has-text("Dismiss"), button[aria-label*="Close"], button:has-text("Accept all")');
         const count = await dismissBtns.count();
         if (count > 0) {
-          await dismissBtns.first().click({ force: true }).catch(() => { });
-          await page.waitForTimeout(500);
+          await humanClickLocator(page, dismissBtns.first(), log, 'gem.setup');
+          await page.waitForTimeout(jitter(500));
           log.trace(`[gem.setup] dismissed overlay`);
         }
       } catch (e) { }
@@ -153,16 +165,16 @@ const BOT_CONFIGS = {
         return;
       }
 
-      await btn.click({ force: true });
-      await page.waitForTimeout(1500);
+      await humanClickLocator(page, btn, log, 'gem.setup');
+      await page.waitForTimeout(jitter(1500));
 
       let re = isLite ? /Lite|Flash-Lite/i : isPro ? /Pro|Advanced/i : /Flash/i;
       let opt = page.locator('gem-menu-item, [role="menuitem"], [role="option"], .mat-mdc-menu-item').filter({ hasText: re });
       if (isFlash && !isLite) opt = opt.filter({ hasNotText: /Lite/i });
 
       try {
-        await opt.first().click({ force: true });
-        await page.waitForTimeout(2000);
+        await humanClickLocator(page, opt.first(), log, 'gem.setup');
+        await page.waitForTimeout(jitter(2000));
         log.trace(`[gem.setup] model switched successfully`);
       } catch (e) {
         log.trace(`[gem.setup] model switch failed, pressing Escape to clean up`);
@@ -199,8 +211,8 @@ const BOT_CONFIGS = {
 
       if (!isCorrect) {
         log.warn(`[gem.verify] Model is "${btnText}"! Forcing switch to ${model}...`);
-        await btn.click({ force: true });
-        await page.waitForTimeout(1500);
+        await humanClickLocator(page, btn, log, 'gem.verify');
+        await page.waitForTimeout(jitter(1500));
 
         let re = isLite ? /Lite|Flash-Lite/i : isPro ? /Pro|Advanced/i : /Flash/i;
         let opt = page.locator('gem-menu-item, [role="menuitem"], [role="option"], .mat-mdc-menu-item').filter({ hasText: re });
@@ -208,8 +220,8 @@ const BOT_CONFIGS = {
 
         let switched = false;
         try {
-          await opt.first().click({ force: true });
-          await page.waitForTimeout(2000);
+          await humanClickLocator(page, opt.first(), log, 'gem.verify');
+          await page.waitForTimeout(jitter(2000));
           switched = true;
         } catch (e) {
           log.warn(`[gem.verify] click failed, pressing Escape`);
@@ -252,8 +264,8 @@ const BOT_CONFIGS = {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         log.trace(`[gem.send] Attempt ${attempt}/${MAX_ATTEMPTS} (${expectedChars} expected chars)`);
 
-        await el.click().catch(() => { });
-        await page.waitForTimeout(250);
+        await humanClickLocator(page, el, log, 'gem.focus');
+        await page.waitForTimeout(jitter(250));
 
         // --- TRUSTED-INPUT INSERT (ported from extension/adapters/gemini.js) ---
         // Chunked document.execCommand('insertText') executed IN PAGE with
@@ -300,7 +312,10 @@ const BOT_CONFIGS = {
               }
             }
             fire(ed);
-            await sleep(25);
+            // Human burst rhythm: fast 15-55ms cadence + an occasional
+            // think-pause every ~8 chunks. Fixed 25ms is a metronome tell.
+            await sleep(15 + Math.random() * 40);
+            if ((i / CHUNK) % 8 === 7) await sleep(280 + Math.random() * 520);
           }
           fire(ed);
         }, text).catch(() => { });
@@ -353,7 +368,7 @@ if (!success) {
       // ==========================================
       // --- TEST 2: DYNAMIC "SLOTH" HUMANIZER DELAY ---
       // ==========================================
-      const slothWait = 2000 + Math.floor(expectedChars / 5000) * 1000;
+      const slothWait = jitter(2000 + Math.floor(expectedChars / 5000) * 1000, 0.3);
       log.trace(`[gem.send] Paste visually verified. Waiting ${slothWait}ms for UI framework to sync...`);
       await page.waitForTimeout(slothWait);
 
@@ -361,37 +376,26 @@ if (!success) {
       await el.focus().catch(() => { });
       await page.keyboard.press('End').catch(() => { }); // Jump to the end of the 18k text
       await page.keyboard.press('Space').catch(() => { });
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(jitter(500));
       await page.keyboard.press('Backspace').catch(() => { });
       
       log.trace(`[gem.send] Waiting 2 seconds for event debounce...`);
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(jitter(2000, 0.3));
 
-      log.trace(`[gem.send] Searching for explicit Send button...`);
-      const clicked = await page.evaluate(() => {
-        const btns = document.querySelectorAll('button');
-        for (const b of btns) {
-          const label = (b.getAttribute('aria-label') || '').toLowerCase();
-          const title = (b.getAttribute('title') || '').toLowerCase();
-          const text = (b.innerText || '').toLowerCase();
-          // Find the send button that isn't disabled
-          if ((label.includes('send') || title.includes('send') || text.includes('send')) && !b.disabled) {
-            b.click();
-            return label || title || text || 'unknown';
-          }
-        }
-        return null;
-      }).catch(() => null);
+      log.trace(`[gem.send] Clicking Send with the real mouse path...`);
+      // Trusted mouse click (isTrusted=true). The old page.evaluate(b.click())
+      // is a JS-synthesized, untrusted click — a detection signal.
+      const clicked = await humanClickSendButton(page, log, 'gem.send');
 
       if (clicked) {
         log.trace(`[gem.send] Clicked Send button: "${clicked}"`);
       } else {
-        log.trace(`[gem.send] No Send button found. Pressing CDP Enter...`);
+        log.trace(`[gem.send] No Send button found. Pressing Enter...`);
         await page.keyboard.press('Enter').catch(() => { });
       }
 
       // Wait a moment for the UI to lock and transition to generating state
-      await page.waitForTimeout(2500);
+      await page.waitForTimeout(jitter(2500, 0.3));
       
       const postLen = await page.evaluate(() => {
         const ed = document.querySelector('.ql-editor');
@@ -399,6 +403,10 @@ if (!success) {
       }).catch(() => -1);
       
       log.trace(`[gem.send] post-submit editor length: ${postLen} chars`);
+      // Hand leaves the mouse: a small scroll + drift to a neutral spot.
+      // Zero mouse presence across a whole session is itself a signal.
+      await page.mouse.wheel(0, rand(150, 450)).catch(() => { });
+      await humanMoveMouse(page, rand(40, 220), rand(480, 660));
       log.trace(`[gem.send] done (${Date.now() - t0}ms)`);
     }
   },
@@ -414,28 +422,28 @@ if (!success) {
     setup: async (page, model, log) => {
       const trigger = page.locator('.qwen-thinking-selector');
       if (await trigger.count() > 0) {
-        await trigger.click(); await page.waitForTimeout(1000);
+        await humanClickLocator(page, trigger, log, 'qwen.setup'); await page.waitForTimeout(jitter(1000));
         const t = model === 'thinking' ? 'Thinking' : model === 'auto' ? 'Auto' : 'Fast';
         const opt = page.locator(`.ant-select-item-option[title="${t}"]`).first();
-        if (await opt.isVisible().catch(() => false)) { await opt.click({ force: true }); await page.waitForTimeout(1000); }
+        if (await opt.isVisible().catch(() => false)) { await humanClickLocator(page, opt, log, 'qwen.setup'); await page.waitForTimeout(jitter(1000)); }
         else { await page.keyboard.press('Escape'); }
       }
     },
     sendPrompt: async (page, text, log) => {
       await page.bringToFront().catch(() => { });
-      await page.waitForTimeout(400);
+      await page.waitForTimeout(jitter(400));
       const ta = page.locator('.message-input-textarea').last();
       await ta.waitFor({ state: 'visible', timeout: 30000 });
       // Trusted-input path (v1 extension style). Throws PASTE_TRUNCATED on
       // mismatch so pasteAndGetResult's supervision retries handle it.
       await trustedTextareaFill(page, '.message-input-textarea', text, log, 'qwen.send');
       log.trace(`[qwen.send] trusted fill ok (${text.length} chars)`);
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(jitter(1500));
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(jitter(1000));
       try {
         const sb = page.locator('button[class*="send"], button[aria-label*="end"]').filter({ hasNot: page.locator('[disabled]') }).first();
-        if (await sb.isVisible({ timeout: 1000 }).catch(() => false)) await sb.click();
+        if (await sb.isVisible({ timeout: 1000 }).catch(() => false)) await humanClickLocator(page, sb, log, 'qwen.send');
       } catch (e) { }
     }
   }
@@ -499,9 +507,9 @@ async function trustedTextareaFill(page, selector, text, log, tag) {
   // Trusted key events nudge the framework to sync (same as v1 adapters).
   await page.keyboard.press('End').catch(() => { });
   await page.keyboard.press('Space').catch(() => { });
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(jitter(400));
   await page.keyboard.press('Backspace').catch(() => { });
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(jitter(1200));
 
   const norm = (s) => String(s || '').replace(/\s+/g, '');
   const verified = await page.evaluate(({ sel, txt }) => {
@@ -522,6 +530,127 @@ async function trustedTextareaFill(page, selector, text, log, tag) {
   if (log) log.trace(`[${tag}] trusted fill verify: ${verified.got}/${verified.want} ${verified.ok ? 'ok' : 'MISMATCH'}`);
   if (!verified.ok) throw new Error('PASTE_TRUNCATED');
 };
+
+// --- Human-mimicry stealth core ---
+// Every fixed sleep, instant click and JS-synthesized event is a bot tell.
+// These helpers emit the signals real users produce: jittered timing, real
+// mouse travel (trusted isTrusted=true CDP input events instead of
+// element.click() from JS), and init-script masking of the well-known
+// automation properties. Best-effort only: supervision never depends on them.
+const rand = (min, max) => min + Math.random() * (max - min);
+const jitter = (base, pct = 0.25) => Math.max(50, Math.round(base * (1 - pct + Math.random() * pct * 2)));
+
+// Per-page last-known cursor position so moves travel like a hand, not jumps.
+const __mousePos = new WeakMap();
+async function humanMoveMouse(page, x, y) {
+  const steps = 6 + Math.floor(Math.random() * 7);
+  await page.mouse.move(x, y, { steps }).catch(() => { });
+  __mousePos.set(page, { x, y });
+}
+
+// Real mouse click with offset jitter and human hold time. Falls back to a
+// normal locator click and only then to force-click, so a step is never lost
+// just because the human path missed.
+async function humanClickLocator(page, locator, log, tag) {
+  try {
+    await locator.scrollIntoViewIfNeeded().catch(() => { });
+    const box = await locator.boundingBox().catch(() => null);
+    if (box && box.width > 0 && box.height > 0) {
+      const x = box.x + box.width * (0.35 + Math.random() * 0.3);
+      const y = box.y + box.height * (0.35 + Math.random() * 0.3);
+      await humanMoveMouse(page, x, y);
+      await page.waitForTimeout(rand(60, 220));
+      await page.mouse.down().catch(() => { });
+      await page.waitForTimeout(rand(40, 130));
+      await page.mouse.up().catch(() => { });
+      if (log) log.trace(`[${tag}] human mouse click @${Math.round(x)},${Math.round(y)}`);
+      return true;
+    }
+  } catch (e) { /* fall through to locator click */ }
+  try { await locator.click({ timeout: 8000 }); return true; }
+  catch (e) {
+    await locator.click({ force: true, timeout: 8000 }).catch(() => { });
+    return true;
+  }
+}
+
+// Find Gemini's Send button WITHOUT clicking it from JS (untrusted), then
+// click it via the real mouse path. Returns the label or null.
+async function humanClickSendButton(page, log, tag) {
+  const rect = await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll('button'));
+    for (const b of btns) {
+      const label = (b.getAttribute('aria-label') || '').toLowerCase();
+      const title = (b.getAttribute('title') || '').toLowerCase();
+      const text = (b.innerText || '').toLowerCase();
+      if ((label.includes('send') || title.includes('send') || text.includes('send')) && !b.disabled) {
+        const r = b.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return { x: r.x, y: r.y, w: r.width, h: r.height, label: label || title || text || 'send' };
+      }
+    }
+    return null;
+  }).catch(() => null);
+  if (!rect) return null;
+  const x = rect.x + rect.w * (0.3 + Math.random() * 0.4);
+  const y = rect.y + rect.h * (0.3 + Math.random() * 0.4);
+  await humanMoveMouse(page, x, y);
+  await page.waitForTimeout(rand(80, 260));
+  await page.mouse.down().catch(() => { });
+  await page.waitForTimeout(rand(40, 130));
+  await page.mouse.up().catch(() => { });
+  if (log) log.trace(`[${tag}] human Send click: "${rect.label}"`);
+  return rect.label;
+}
+
+// Mask well-known automation properties before page scripts run. Call after
+// newPage(), BEFORE goto(). Deliberately minimal — over-spoofing creates
+// worse inconsistencies than it fixes. The real user profile already supplies
+// locale, timezone, UA, cookies and history.
+async function applyStealth(page, log) {
+  try {
+    await page.addInitScript(() => {
+      try {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: true });
+      } catch (e) { /* ignore */ }
+      try {
+        if (!window.chrome || !window.chrome.runtime) {
+          window.chrome = { runtime: {}, loadTimes: function () { }, csi: function () { }, app: {} };
+        }
+      } catch (e) { /* ignore */ }
+      try {
+        const perms = window.navigator.permissions;
+        if (perms && perms.query) {
+          const origQuery = perms.query.bind(perms);
+          window.navigator.permissions.query = (params) =>
+            params && params.name === 'notifications'
+              ? Promise.resolve({ state: Notification.permission })
+              : origQuery(params);
+        }
+      } catch (e) { /* ignore */ }
+      try {
+        if (navigator.plugins && navigator.plugins.length === 0) {
+          Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3], configurable: true });
+        }
+      } catch (e) { /* ignore */ }
+    }).catch(() => { });
+    // Native window viewport: Playwright applies a fixed emulated viewport to
+    // every CDP page, so the site renders letterboxed inside the real (often
+    // maximized) window — visibly wrong and detectable. Clearing the override
+    // lets the page use the actual window size, exactly like a human's
+    // browser. The override is per-page, so parallel tabs are unaffected.
+    let native = false;
+    try {
+      const s = await page.context().newCDPSession(page);
+      await s.send('Emulation.clearDeviceMetricsOverride').catch(() => { });
+      await s.detach().catch(() => { });
+      native = true;
+    } catch (e) { /* fall through to fallback */ }
+    if (!native) {
+      await page.setViewportSize({ width: 1366, height: 768 }).catch(() => { });
+    }
+    if (log) log.trace(`[stealth] applied (${native ? 'native window viewport' : 'fallback viewport'}, webdriver masked)`);
+  } catch (e) { /* stealth is best-effort; supervision continues */ }
+}
 
 async function loadGlossary(p) {
   try {
@@ -729,7 +858,15 @@ async function pasteAndGetResult(page, bot, text, isThinkingModel, log, taskId) 
     if (!activeTasks.has(taskId)) throw new Error('TASK_CANCELLED');
     await page.waitForTimeout(4000);
 
-    if (i === 4 || i === 10) {
+    const count = await page.locator(respSel).count().catch(() => 0);
+    const isThinking = bot.isThinking ? await bot.isThinking(page, log).catch(() => false) : false;
+    const changed = count === initCount && count > 0
+      ? await page.locator(respSel).nth(initCount - 1).innerText().catch(() => '') !== prev
+      : false;
+
+    // Rescue nudge ONLY when nothing is happening: never press Enter while
+    // the model is reasoning — that double-submits and kills the thought.
+    if (!isThinking && (i === 4 || i === 10)) {
       const unsent = await page.evaluate(() => {
         const ed = document.querySelector('.ql-editor') || document.querySelector('textarea');
         return ed ? (ed.innerText || ed.value || '').trim().length : 0;
@@ -746,12 +883,7 @@ async function pasteAndGetResult(page, bot, text, isThinkingModel, log, taskId) 
       throw new Error(`API_ERROR: ${pageError}`);
     }
 
-    const count = await page.locator(respSel).count().catch(() => 0);
-    const isThinking = bot.isThinking ? await bot.isThinking(page, log).catch(() => false) : false;
-    const changed = count === initCount && count > 0
-      ? await page.locator(respSel).nth(initCount - 1).innerText().catch(() => '') !== prev
-      : false;
-
+    // (count / isThinking / changed were computed above, before the nudge.)
     if (i % 5 === 0 || count > initCount || isThinking)
       log.trace(`[wait] p1 i=${i}: resp=${count} think=${isThinking} chg=${changed}`);
 
@@ -764,12 +896,18 @@ async function pasteAndGetResult(page, bot, text, isThinkingModel, log, taskId) 
 
   if (!started) throw new Error('Timeout: Bot did not start generating.');
 
+  // Reasoning models pause long between thought and answer parts: give them
+  // 120s of silence (vs 60s) and require 12s of stability (vs 8s) so a slow
+  // part-by-part stream is never mistaken for a finished answer. The old
+  // limits fired mid-thought → page.reload() killed the answer → endless
+  // fail loop that looked like "impatient refreshes".
   let stable = 0, last = '', idle = 0, total = 0;
-  const maxIdle = 15;
+  const maxIdle = isThinkingModel ? 30 : 15;
+  const stableTarget = isThinkingModel ? 3 : 2;
   const maxTotal = isThinkingModel ? 225 : 75;
   const target = page.locator(respSel).last();
 
-  while (stable < 2 && total < maxTotal) {
+  while (stable < stableTarget && total < maxTotal) {
     if (!activeTasks.has(taskId)) throw new Error('TASK_CANCELLED');
     await page.waitForTimeout(4000);
     total++;
@@ -815,7 +953,7 @@ async function pasteAndGetResult(page, bot, text, isThinkingModel, log, taskId) 
         log.trace(`[wait] p2 i=${total}: len=${cur.trim().length} think=${thinking} stable=${stable} idle=${idle}`);
 
       if (idle >= maxIdle)
-        throw new Error('Timeout: Bot stuck (60s no content).');
+        throw new Error(`Timeout: Bot stuck (${maxIdle * 4}s no content).`);
 
     } catch (e) {
       if (e.message.includes('API_ERROR') || e.message.includes('FATAL_API_ERROR') || e.message.includes('Timeout:') || e.message.includes('TASK_CANCELLED')) throw e;
@@ -829,7 +967,95 @@ async function pasteAndGetResult(page, bot, text, isThinkingModel, log, taskId) 
   return last.trim();
 }
 
+// ==========================================
+// -- AUTOPILOT: translate → edit → proof --
+// ==========================================
+// Runs the three stages back-to-back on the SAME page (shared chat context,
+// like v1 chains) by reusing processFile with per-stage configs — so every
+// stage keeps the full supervision ladder: trusted input, thinking waits,
+// soft/hard retries, fatal taxonomy, failed-chapters ledger.
+// Idempotent + resumable: finished stages are detected and skipped, so a
+// restarted job never pays twice. Exceptions propagate to runTask's handler
+// (requeue on crash, strike-pause on fatal, ledger + next file otherwise).
+async function processFileAuto(page, file, cfg, log, taskId) {
+  const inputBookDir = path.join(BASE_INPUT_DIR, cfg.bookName);
+  const translateDir = path.join(BASE_OUTPUT_DIR, 'translate', cfg.bookName);
+  const editedDir = path.join(BASE_OUTPUT_DIR, 'edited', cfg.bookName);
+  const proofingDir = path.join(BASE_OUTPUT_DIR, 'proofing', cfg.bookName);
+  await fs.mkdir(translateDir, { recursive: true });
+  await fs.mkdir(editedDir, { recursive: true });
+  await fs.mkdir(proofingDir, { recursive: true });
+
+  const prompts = cfg.prompts || {};
+  const stagePrompt = {
+    translate: prompts.translate || cfg.prompt || '',
+    edit: prompts.edit || cfg.prompt || '',
+    proof: prompts.proof || cfg.prompt || ''
+  };
+  for (const [stage, pr] of Object.entries(stagePrompt)) {
+    if (!pr) {
+      const msg = `Autopilot ${stage} prompt is empty — check the template file has a ${stage === 'translate' ? 'translation' : stage === 'edit' ? 'editorial' : 'proofing'}_prompt section.`;
+      log.error(`[${file}] ${msg}`);
+      await logFailedChapterSafe(proofingDir, file, 'AUTO_PROMPT_MISSING:' + stage);
+      throw new Error(msg);
+    }
+  }
+
+  const wordsOf = (txt) => String(txt || '').trim().split(/\s+/).filter(Boolean).length;
+  const jsonName = file.replace(/\.[^.]+$/, '.json');
+
+  // Already fully done? Never redo a finished chapter.
+  try {
+    const doneRaw = await fs.readFile(path.join(proofingDir, jsonName), 'utf-8');
+    const doneJson = JSON.parse(doneRaw);
+    const doneParas = Array.isArray(doneJson.paragraphs) ? doneJson.paragraphs.join('\n') : '';
+    if (wordsOf(doneParas) > 0) {
+      log.success(`[${file}] Autopilot: final JSON already exists — skipping.`);
+      return;
+    }
+  } catch (e) { /* not done yet — run the chain */ }
+
+  const hasStageOutput = async (dir) => wordsOf(await readSourceText(dir, file)) > 0;
+
+  // Stage 1: translate (English → Persian, glossary enforced).
+  if (await hasStageOutput(translateDir)) {
+    log.step(`[${file}] Autopilot 1/3 translate — output exists, skipping.`);
+  } else {
+    log.step(`[${file}] Autopilot 1/3 translate…`);
+    await processFile(page, file, {
+      ...cfg, mode: 'translate', srcDir: inputBookDir, outDir: translateDir,
+      prompt: stagePrompt.translate, glossary: cfg.glossary || {}, inputDir: null
+    }, log, taskId);
+    if (!await hasStageOutput(translateDir)) throw new Error(`Autopilot translate produced no output for ${file}.`);
+  }
+
+  // Stage 2: edit (polish the translation).
+  if (await hasStageOutput(editedDir)) {
+    log.step(`[${file}] Autopilot 2/3 edit — output exists, skipping.`);
+  } else {
+    log.step(`[${file}] Autopilot 2/3 edit…`);
+    await processFile(page, file, {
+      ...cfg, mode: 'edit', srcDir: translateDir, outDir: editedDir,
+      prompt: stagePrompt.edit, inputDir: null
+    }, log, taskId);
+    if (!await hasStageOutput(editedDir)) throw new Error(`Autopilot edit produced no output for ${file}.`);
+  }
+
+  // Stage 3: proof (EN + FA full-chapter → final JSON).
+  log.step(`[${file}] Autopilot 3/3 proof…`);
+  await processFile(page, file, {
+    ...cfg, mode: 'proof', srcDir: editedDir, outDir: proofingDir,
+    prompt: stagePrompt.proof, inputDir: inputBookDir
+  }, log, taskId);
+
+  log.success(`[${file}] Autopilot done: translated → edited → proofed. 🎉`);
+}
+
 async function processFile(page, file, cfg, log, taskId) {
+  // Autopilot delegates to the 3-stage chain below (same page = shared chat
+  // context, like v1 chains). All supervision lives inside processFile.
+  if (cfg.mode === 'auto') return processFileAuto(page, file, cfg, log, taskId);
+
   log.step(`Processing ${file}... (${cfg.mode}, ${cfg.chunkSize}w chunks, ${cfg.chunkDelay}s delay)`);
 
   if (cfg.mode === 'score') {
@@ -872,8 +1098,8 @@ async function processFile(page, file, cfg, log, taskId) {
         await withTimeout(
           // At the top of processFile, right before pasteAndGetResult:
           pasteAndGetResult(page, cfg.bot, cfg.prompt, cfg.isThinking, log, taskId),
-          300000,
-          'HARD_TIMEOUT: Initial prompt > 5min.'
+          cfg.isThinking ? 600000 : 300000,
+          'HARD_TIMEOUT: Initial prompt > limit (5min, 10min for thinking models).'
         );
         const waitSec = cfg.chunkDelay || 5;
         log.trace(`[score] initial prompt done, waiting ${waitSec}s`);
@@ -953,17 +1179,34 @@ async function processFile(page, file, cfg, log, taskId) {
       return;
     }
 
+    // Chapter glossary, matched against the ENGLISH source with the SAME
+    // matcher the translate step uses (reuse, don't reinvent) — only terms
+    // actually present in this chapter, never the whole book. Without this
+    // the proofer can't see (or keep) the exact translations chosen earlier.
+    let proofGlossary = cfg.glossary || {};
+    if (!Object.keys(proofGlossary).length && cfg.inputDir) {
+      proofGlossary = await loadGlossary(path.join(cfg.inputDir, 'glossary.txt'));
+    }
+    const glossMatches = findGlossaryMatches(englishText, proofGlossary);
+    let glossBlock = '';
+    if (glossMatches.length) {
+      glossBlock = '### GLOSSARY FOR THIS CHAPTER (these exact translations were already used - keep them identical in the final text):\n';
+      glossMatches.forEach(({ en, fa }) => { glossBlock += `- ${en} -> ${fa}\n`; });
+      glossBlock += '\n\n\n';
+    }
+
     const enFp = makeFingerprints(englishText);
     const faFp = makeFingerprints(farsiText);
 
-    const body = `انگلیسی:\n${englishText}\n\n\n\nفارسی:\n${farsiText}`;
+    const body = `${glossBlock}انگلیسی:\n${englishText}\n\n\n\nفارسی:\n${farsiText}`;
     const finalPrompt = (cfg.promptMode === 2 && cfg.prompt)
       ? `${cfg.prompt}\n\n${body}`
       : body;
 
     const labelWords = countWords('انگلیسی: فارسی:');
     const promptWords = (cfg.promptMode === 2 && cfg.prompt) ? countWords(cfg.prompt) : 0;
-    const expectedWords = enWords + faWords + labelWords + promptWords;
+    const glossWords = countWords(glossBlock);
+    const expectedWords = enWords + faWords + labelWords + promptWords + glossWords;
     const finalWords = countWords(finalPrompt);
 
     const fingerprintOk =
@@ -975,7 +1218,7 @@ async function processFile(page, file, cfg, log, taskId) {
     const wordTolerance = Math.max(5, Math.ceil(expectedWords * 0.01));
     const wordOk = Math.abs(finalWords - expectedWords) <= wordTolerance;
 
-    log.trace(`[proof] payload check expected=${expectedWords}w final=${finalWords}w fingerprints=${fingerprintOk ? 'ok' : 'fail'}`);
+    log.trace(`[proof] payload check expected=${expectedWords}w final=${finalWords}w gloss=${glossMatches.length} fingerprints=${fingerprintOk ? 'ok' : 'fail'}`);
 
     if (!wordOk || !fingerprintOk) {
       const reason = `PROOF_PAYLOAD_MISMATCH expected=${expectedWords} final=${finalWords} fingerprints=${fingerprintOk ? 'ok' : 'fail'}`;
@@ -989,8 +1232,8 @@ async function processFile(page, file, cfg, log, taskId) {
       try {
         await withTimeout(
           pasteAndGetResult(page, cfg.bot, cfg.prompt, cfg.isThinking, log, taskId),
-          300000,
-          'HARD_TIMEOUT: Initial prompt > 5min.'
+          cfg.isThinking ? 600000 : 300000,
+          'HARD_TIMEOUT: Initial prompt > limit (5min, 10min for thinking models).'
         );
 
         const waitSec = cfg.chunkDelay || 5;
@@ -1175,7 +1418,7 @@ async function processFile(page, file, cfg, log, taskId) {
     log.trace(`[file] initial prompt...`);
     await withTimeout(
       pasteAndGetResult(page, cfg.bot, cfg.prompt, cfg.isThinking, log, taskId),
-      300000, 'HARD_TIMEOUT: Initial prompt > 5min.'
+      cfg.isThinking ? 600000 : 300000, 'HARD_TIMEOUT: Initial prompt > limit (5min, 10min for thinking models).'
     );
     log.trace(`[file] initial done, wait ${cfg.chunkDelay}s`);
     await page.waitForTimeout(cfg.chunkDelay * 1000);
@@ -1185,8 +1428,10 @@ async function processFile(page, file, cfg, log, taskId) {
   let fileSkipped = false;
   for (let i = 0; i < chunksArr.length; i++) {
     if (!activeTasks.has(taskId)) throw new Error('TASK_CANCELLED');
+    // Only steal focus if the page lost it — constant bringToFront fights
+    // between parallel tabs are themselves a signal. Jittered either way.
     await page.bringToFront().catch(() => { });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(jitter(500));
 
     let success = false, retries = MAX_CHUNK_RETRIES, out = '';
     while (!success && retries >= 0) {
@@ -1355,9 +1600,9 @@ async function runTask(task, log) {
       try {
         log.info(`[W${wid}] ${file}`);
         page = await ctx.newPage();
-        // Human-sized viewport: a 200x200 occluded window is an automation
-        // tell. Supervision (telemetry, timeouts, retries) below is untouched.
-        await page.setViewportSize({ width: 1366, height: 768 }).catch(() => { });
+        // Stealth FIRST (webdriver mask + human viewport), before goto().
+        // Supervision (telemetry, timeouts, retries) below is untouched.
+        await applyStealth(page, log);
         // --- NEW TELEMETRY LOGS ---
         page.on('console', msg => {
           const type = msg.type();
@@ -1379,7 +1624,7 @@ async function runTask(task, log) {
         // --------------------------
         page.setDefaultTimeout(180000);
         await page.goto(task.bot.url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => { });
-        await page.waitForTimeout(4000);
+        await page.waitForTimeout(jitter(4000, 0.3));
         await page.bringToFront().catch(() => { });
 
         if (task.bot.setup) await task.bot.setup(page, task.selectedModel, log);
@@ -1446,7 +1691,7 @@ async function runTask(task, log) {
 
   try {
     const workers = [];
-    for (let i = 0; i < task.concurrentTabs; i++) { workers.push(startWorker(i + 1)); await sleep(3500); }
+    for (let i = 0; i < task.concurrentTabs; i++) { workers.push(startWorker(i + 1)); await sleep(rand(2500, 5000)); }
     await Promise.all(workers);
     if (activeTasks.has(task.id)) log.success('All done!');
   } catch (err) { log.error(`Sys: ${err.message}`); }
@@ -1603,8 +1848,12 @@ app.post('/api/start', async (req, res) => {
   if (!files.length) return res.status(400).json({ error: 'No files matched.' });
 
   let glossary = {};
-  if (data.mode === 'translate') {
+  if (data.mode === 'translate' || data.mode === 'auto') {
     glossary = await loadGlossary(path.join(srcDir, 'glossary.txt'));
+  } else if (data.mode === 'proof') {
+    // Standalone proof never had the glossary — load it from the raw input
+    // book dir (same file the translate step uses).
+    glossary = await loadGlossary(path.join(BASE_INPUT_DIR, data.bookName, 'glossary.txt'));
   }
 
   const rawPrompt = await fs.readFile(path.join(PROMPTS_DIR, data.promptFile), 'utf-8').catch(() => '');
@@ -1621,24 +1870,35 @@ app.post('/api/start', async (req, res) => {
       promptText = '';
     }
   } else if (data.mode === 'translate') promptText = t ? t[1].trim() : '';
+  else if (data.mode === 'auto') promptText = t ? t[1].trim() : '';
   else if (data.mode === 'edit') promptText = e ? e[1].trim() : '';
   else if (data.mode === 'proof') promptText = p ? p[1].trim() : '';
   else if (data.mode === 'score') promptText = s ? s[1].trim() : '';
 
-  const inputDir = (data.mode === 'proof' || data.mode === 'score') ? path.join(BASE_INPUT_DIR, data.bookName) : null;
+  // Autopilot carries all three stage prompts; processFileAuto picks per stage.
+  const stagePrompts = {
+    translate: t ? t[1].trim() : '',
+    edit: e ? e[1].trim() : '',
+    proof: p ? p[1].trim() : ''
+  };
+
+  const inputDir = (data.mode === 'proof' || data.mode === 'score' || data.mode === 'auto') ? path.join(BASE_INPUT_DIR, data.bookName) : null;
 
   const taskDef = {
     id: taskId, mode: data.mode, profile, bookName: data.bookName, srcDir, outDir, files,
     bot: botCfg, botName: data.botName, selectedModel: data.model,
-    promptMode: parseInt(data.promptMode), prompt: promptText,
-    isThinking: ['thinking', 'expert', 'pro'].includes(data.model),
+    promptMode: parseInt(data.promptMode), prompt: promptText, prompts: stagePrompts,
+    // Reasoning models (Gemini Flash/Pro, Qwen Thinking, DeepSeek Expert) think
+    // 60-90s before/within answers — they get the patient wait profile in
+    // pasteAndGetResult. Never gate patience on speed alone.
+    isThinking: ['thinking', 'expert', 'pro', 'flash-light', 'light'].includes(data.model),
     chunkSize: parseInt(data.chunkSize) || 1000, chunkDelay: parseInt(data.chunkDelay) || 20,
     concurrentTabs: parseInt(data.concurrentTabs) || 1, glossary, inputDir
   };
 
   activeTasks.set(taskId, taskDef);
   runTask(taskDef, createLogger(taskId));
-  res.json({ taskId, message: 'Started', title: `${data.mode.toUpperCase()}: ${data.bookName} (${files.length} ch) → ${data.botName}` });
+  res.json({ taskId, message: 'Started', title: `${data.mode === 'auto' ? 'AUTO ✈' : data.mode.toUpperCase()}: ${data.bookName} (${files.length} ch) → ${data.botName}` });
 });
 
 

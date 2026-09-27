@@ -126,3 +126,753 @@ proofing_prompt:
 تو باید فقط و فقط متن نهایی، بازنویسی‌شده و بی‌نقص را ارائه دهی و از دادن هرگونه توضیح اضافه خودداری کنی.
 
 [اگر همه چیز برات روشن و قابل فهمه، بگه آماده‌م. در پیام بعدی متن فصل رو ارسال میکنم.] 
+
+
+
+
+
+
+book_cover_prompt:
+```text
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERSIAN TYPOGRAPHIC ADAPTATION ENGINE
+REFERENCE-FIDELITY + CREATIVE EXPANSION EDITION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TASK:
+Recreate the title typography of the reference artwork in natural Persian.
+
+This is NOT a simple translation task.
+This is NOT generic Persian typography generation.
+This is NOT a redesign of the reference.
+
+It is a HIGH-FIDELITY TYPOGRAPHIC ADAPTATION with CONTROLLED CREATIVE
+EXPANSION.
+
+The final Persian typography must preserve the visual DNA of the
+reference while becoming a polished, energetic, sophisticated,
+professionally designed Persian version.
+
+The goal is:
+
+PRESERVE THE DESIGN LANGUAGE.
+EXPAND ITS POSSIBILITIES.
+DO NOT REPLACE IT.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ORIGINAL TITLE:
+[ORIGINAL TITLE]
+
+PERSIAN TITLE:
+[PERSIAN TITLE]
+
+SUBTITLE / TAGLINE:
+[SUBTITLE IF ANY]
+
+AUTHOR / VOLUME / OTHER TEXT:
+[ADDITIONAL TEXT IF ANY]
+
+REFERENCE IMAGE:
+Use the provided artwork as the primary visual reference.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CORE DESIGN PHILOSOPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The reference is the SOURCE OF VISUAL IDENTITY.
+
+The Persian version must retain:
+
+• typography personality
+• font archetype
+• visual hierarchy
+• composition
+• title footprint
+• scale relationships
+• visual rhythm
+• color relationships
+• texture
+• depth
+• decorative language
+• relationship with the artwork
+
+However, the Persian version should NOT be a passive or mechanical
+copy.
+
+After preserving the reference's visual DNA, intelligently explore
+additional typographic possibilities that are:
+
+• visually compatible
+• reference-derived
+• Persian-aware
+• more expressive
+• more energetic
+• more polished
+• more visually memorable
+
+The result should feel like:
+
+"THE SAME DESIGNER MAKING A MORE REFINED PERSIAN EDITION"
+
+not:
+
+"THE SAME DESIGN WITH THE ENGLISH WORDS REPLACED."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ABSOLUTE PRIORITY ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. REFERENCE VISUAL IDENTITY
+2. REFERENCE TYPOGRAPHIC CHARACTER
+3. REFERENCE COMPOSITION
+4. REFERENCE HIERARCHY
+5. REFERENCE VISUAL RHYTHM
+6. PERSIAN TYPOGRAPHIC NATURALNESS
+7. CONTROLLED CREATIVE EXPANSION
+8. ADDITIONAL DECORATION
+
+Creative freedom is allowed ONLY after the reference's design language
+has been correctly understood.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE FIDELITY ENGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+First analyze the reference before designing anything.
+
+Extract its complete typographic DNA.
+
+Identify:
+
+• font archetype
+• serif / sans-serif / handwritten / display / geometric / gothic
+• stroke contrast
+• weight
+• width
+• height
+• condensation
+• expansion
+• softness
+• sharpness
+• spacing
+• kerning
+• line spacing
+• alignment
+• title footprint
+• visual center
+• dominant words
+• secondary words
+• supporting text
+• text orientation
+• text curvature
+• rotation
+• overlap
+• layering
+• outline
+• shadow
+• glow
+• texture
+• transparency
+• color hierarchy
+• ornaments
+• flourishes
+• framing
+• borders
+• banners
+• graphic accents
+• relationship between text and illustration
+
+Do not merely identify what the title says.
+
+Identify HOW THE DESIGNER MADE THE TITLE FEEL.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPOGRAPHIC STYLE LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The reference determines the typography category.
+
+If the reference is:
+
+• elegant serif → remain elegant serif
+• editorial → remain editorial
+• minimalist → remain minimalist
+• handwritten → remain handwritten
+• playful → remain playful
+• geometric → remain geometric
+• gothic → remain gothic
+• dramatic → remain dramatic
+• delicate → remain delicate
+• bold → remain bold
+• luxurious → remain luxurious
+• rough → remain rough
+• youthful → remain youthful
+
+Do not change the typography category simply because the text becomes
+Persian.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL RULE:
+PERSIAN SCRIPT ≠ PERSIAN CALLIGRAPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The use of Persian language does NOT automatically justify:
+
+• Nastaliq
+• traditional calligraphy
+• ornamental Arabic aesthetics
+• Middle-Eastern visual motifs
+• excessive flourishes
+• excessive curves
+• traditional decorative forms
+• mystical ornamentation
+
+unless the reference itself contains comparable characteristics.
+
+Persian glyphs must adapt to the EXISTING DESIGN LANGUAGE.
+
+Change the script.
+Do not change the identity.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE-DERIVED CREATIVE EXPANSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is the most important creative layer.
+
+After analyzing the reference, identify its strongest visual motifs.
+
+For example:
+
+• oversized letters
+• elegant thin strokes
+• dramatic contrast
+• long horizontal strokes
+• curved terminals
+• overlapping words
+• layered typography
+• stars
+• sparkles
+• vines
+• ornamental lines
+• frames
+• shadows
+• glow
+• color transitions
+• handwritten rhythm
+• irregular alignment
+• large initials
+• small caps
+• underlines
+• visual separators
+• surrounding graphic marks
+
+Do NOT merely copy these elements.
+
+Explore how the SAME VISUAL IDEA can be translated into stronger
+Persian typography.
+
+The Persian version may:
+
+• amplify an existing flourish
+• create a more elegant word silhouette
+• use a Persian letter as a visual anchor
+• extend an appropriate letterform
+• create a more dynamic overlap
+• introduce controlled asymmetry
+• make the title interact more strongly with the artwork
+• create a more expressive negative-space shape
+• redistribute visual weight between Persian words
+• use a dominant glyph as a compositional element
+• connect decorative strokes to existing Persian letterforms
+• use the Persian baseline as part of the composition
+• use subtle internal layering
+• create stronger visual rhythm
+• create more depth through existing reference effects
+
+BUT:
+
+Every creative decision must feel as though it naturally evolved from
+the reference.
+
+Do not add unrelated stylistic ideas.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATIVE EXPANSION TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before finalizing, mentally explore several possible Persian
+adaptations of the same reference.
+
+Consider variations in:
+
+• line arrangement
+• word hierarchy
+• dominant glyph
+• spacing
+• overlap
+• scale contrast
+• negative space
+• decorative integration
+• visual rhythm
+• title silhouette
+
+Then select the strongest solution.
+
+The selected solution should be:
+
+MORE EXPRESSIVE THAN A LITERAL REPRODUCTION
+
+while remaining unmistakably related to the reference.
+
+Do not choose the most conservative option automatically.
+
+Do not choose the most decorative option automatically.
+
+Choose the option with the strongest balance of:
+
+REFERENCE FIDELITY + PERSIAN TYPOGRAPHY + VISUAL IMPACT.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NO GENERIC CREATIVE DECORATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Do NOT add decorative elements merely because they make the title
+"look beautiful."
+
+Do NOT automatically add:
+
+• flowers
+• stars
+• sparkles
+• arabesques
+• frames
+• ribbons
+• ornaments
+• magical symbols
+• calligraphic swashes
+• glowing particles
+• excessive shadows
+• excessive gradients
+
+unless:
+
+1. they already exist in the reference, OR
+2. they are a natural extension of an existing reference element.
+
+Every added element must have a DESIGN REASON.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERSIAN TYPOGRAPHIC INVENTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use the unique visual possibilities of Persian script creatively.
+
+Persian letters may become part of the graphic composition.
+
+When appropriate, explore:
+
+• enlarged initial letters
+• enlarged final letters
+• controlled کشیده
+• extended horizontal strokes
+• expressive letter silhouettes
+• carefully controlled ligature-like relationships
+• overlapping glyph structures
+• asymmetric word shapes
+• baseline interaction
+• vertical stacking
+• controlled negative space
+• subtle letter deformation
+• decorative integration into existing ornaments
+
+These techniques must remain:
+
+• readable
+• intentional
+• elegant
+• typographically plausible
+
+Do not distort letters until they become ambiguous.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VISUAL ENERGY ENGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The Persian result should not feel weaker or flatter than the reference.
+
+Preserve or improve:
+
+• visual energy
+• contrast
+• rhythm
+• movement
+• scale
+• depth
+• hierarchy
+• silhouette
+• emotional impact
+
+If the reference is energetic,
+make the Persian adaptation equally energetic or stronger.
+
+If the reference is delicate,
+increase sophistication rather than visual noise.
+
+If the reference is minimalist,
+increase precision rather than decoration.
+
+If the reference is dramatic,
+increase typographic impact rather than adding random effects.
+
+Creative expansion must follow the emotional energy of the reference.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERSIAN TITLE ADAPTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use the provided Persian title as the semantic source.
+
+Preserve its meaning.
+
+Do NOT:
+
+• add information
+• remove information
+• invent subtitles
+• resolve ambiguity
+• alter the intended meaning
+• force unnatural grammar
+
+Natural Persian word order takes priority over English word order.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTOMATIC SEMANTIC HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determine which Persian words correspond to the most important visual
+elements of the original title.
+
+Automatically decide:
+
+• dominant word
+• secondary word
+• supporting word
+• connector word
+• subtitle
+• author text
+• volume information
+
+Transfer the reference's hierarchy rather than treating every word
+equally.
+
+Short grammatical words may be visually reduced when appropriate.
+
+Important semantic words may become visually dominant.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTOMATIC LINE-BREAKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Do NOT mechanically preserve English line breaks.
+
+Determine the best Persian composition based on:
+
+• word length
+• semantic grouping
+• reference structure
+• available space
+• visual balance
+• title footprint
+• Persian readability
+
+Possible structures include:
+
+• single line
+• two lines
+• three lines
+• stacked composition
+• staggered composition
+• asymmetric composition
+• nested composition
+
+The chosen structure must remain visually related to the reference.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LENGTH COMPENSATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If the Persian title is LONGER:
+
+Do NOT simply shrink everything.
+
+Use intelligent compensation through:
+
+• line redistribution
+• hierarchy
+• scale differences
+• controlled spacing
+• compact secondary text
+• vertical expansion
+• controlled overlap
+• negative-space management
+
+If the Persian title is SHORTER:
+
+Do NOT automatically add decoration.
+
+Instead use:
+
+• larger dominant typography
+• stronger scale contrast
+• controlled spacing
+• larger visual footprint
+• existing reference effects
+• expressive composition
+
+Preserve the approximate VISUAL MASS of the original title.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPOGRAPHIC GEOMETRY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Preserve the reference's geometry.
+
+If the reference uses:
+
+• horizontal → preserve horizontal dominance
+• diagonal → preserve diagonal movement
+• stacked → preserve stacking
+• curved → preserve curvature
+• asymmetrical → preserve asymmetry
+• centered → preserve balance
+• corner placement → preserve spatial relationship
+• overlap → preserve overlap
+• framing → preserve framing
+
+Creative expansion may intensify these characteristics,
+but must not replace them.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COLOR AND EFFECT TRANSFER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Preserve the reference's:
+
+• colors
+• contrast
+• highlights
+• shadows
+• glow
+• outline
+• texture
+• transparency
+• dimensionality
+
+Creative expansion may refine or intensify an existing effect.
+
+It must NOT introduce an unrelated visual effect.
+
+For example:
+
+existing subtle glow
+→ slightly more sophisticated glow is acceptable
+
+no glow
+→ dramatic magical glow is NOT acceptable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DECORATIVE ELEMENT ADAPTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Treat reference decorations as a VISUAL VOCABULARY.
+
+Reuse, reinterpret, combine, and intelligently extend that vocabulary.
+
+A decorative element may:
+
+• connect to a Persian letter
+• become an underline
+• become a frame
+• cross between words
+• create visual continuity
+• emphasize a dominant word
+• fill negative space
+• guide the eye
+• integrate typography with the illustration
+
+But it must remain visually native to the reference.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTWORK INTERACTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Typography is part of the artwork, not a separate text layer.
+
+Analyze:
+
+• characters
+• faces
+• objects
+• architecture
+• negative space
+• lighting
+• foreground
+• background
+• focal points
+• existing visual motion
+
+Allow the Persian title to interact dynamically with the artwork when
+the reference does so.
+
+Possible interactions include:
+
+• passing behind an object
+• overlapping a character
+• following an architectural curve
+• occupying negative space
+• visually framing a character
+• aligning with environmental geometry
+• connecting with existing decorative elements
+
+Do not obscure important artwork unnecessarily.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESIGNER SIMULATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Imagine that the original designer created this artwork with Persian
+as the ORIGINAL publication language.
+
+Then imagine that the designer wanted the Persian version to be the
+most polished and visually expressive version possible.
+
+The designer would:
+
+• preserve their original aesthetic
+• preserve their typography category
+• preserve their hierarchy
+• preserve their composition
+• preserve their visual restraint
+• exploit the unique geometry of Persian script
+• improve visual rhythm where Persian requires it
+• create elegant solutions to differences in word length
+• use Persian glyphs as graphic forms
+• add only reference-compatible enhancements
+
+Reproduce that thought process.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFERENCE FIDELITY VS. CREATIVE FREEDOM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use this hierarchy:
+
+REFERENCE DNA
+      ↓
+PERSIAN ADAPTATION
+      ↓
+REFERENCE-DERIVED ENHANCEMENT
+      ↓
+FINAL POLISH
+
+Never reverse this order.
+
+If an idea looks impressive but makes the title visually unrelated to
+the reference, reject it.
+
+If an idea is creative but preserves the reference's visual DNA,
+consider it.
+
+If an idea is both faithful and creatively stronger, prefer it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL QUALITY CONTROL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Verify:
+
+✓ Same visual family as the reference
+✓ Same typography category
+✓ Same emotional personality
+✓ Comparable title footprint
+✓ Comparable visual hierarchy
+✓ Comparable scale relationships
+✓ Comparable composition
+✓ Comparable color language
+✓ Comparable effects
+✓ Comparable visual rhythm
+✓ Persian typography is natural
+✓ RTL direction is correct
+✓ Persian glyphs are correctly formed
+✓ Meaning is preserved
+✓ Line breaks are intentional
+✓ Word hierarchy is intentional
+✓ The title feels integrated with the artwork
+✓ Creative additions are reference-derived
+✓ No generic Persian calligraphy was introduced
+✓ No unrelated decorations were introduced
+✓ No unnecessary visual noise was added
+✓ The Persian version has equal or greater visual impact
+✓ The result feels professionally art-directed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL CREATIVE CHECK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ask:
+
+"Is this merely a faithful Persian copy?"
+
+If YES:
+increase refinement, typographic expression, Persian-specific
+composition, and reference-derived creativity.
+
+Then ask:
+
+"Has the creativity changed the identity of the reference?"
+
+If YES:
+remove the unrelated creative elements.
+
+The final result must occupy the optimal point between:
+
+        REFERENCE FIDELITY
+              +
+        PERSIAN TYPOGRAPHY
+              +
+        CREATIVE EXPRESSION
+              +
+        VISUAL ENERGY
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ABSOLUTE FINAL RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DO NOT MAKE A NEW DESIGN.
+
+DO NOT MAKE A MECHANICAL COPY.
+
+CREATE A MORE EXPRESSIVE PERSIAN VERSION OF THE SAME DESIGN.
+
+Preserve the reference's DNA,
+exploit the unique visual possibilities of Persian,
+and intelligently expand the reference's existing ideas.
+
+The final result must communicate:
+
+"THE ORIGINAL DESIGN — REIMAGINED AT ITS FULL TYPOGRAPHIC POTENTIAL
+FOR PERSIAN"
+
+NOT:
+
+"THE ORIGINAL DESIGN WITH PERSIAN TEXT"
+
+and NOT:
+
+"A COMPLETELY NEW PERSIAN DESIGN INSPIRED BY THE ORIGINAL."
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

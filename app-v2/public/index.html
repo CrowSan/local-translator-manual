@@ -12,7 +12,10 @@
       --primary: #3b82f6; --primary-hover: #2563eb;
       --secondary: #4b5563; --secondary-hover: #374151;
       --danger: #ef4444; --danger-hover: #dc2626;
-      --radius: 8px;
+      --radius: 8px; --radius-lg: 16px;
+      --success: #22c55e;
+      --edge-primary: #1d4ed8; --edge-danger: #991b1b; --edge-gray: #374151;
+      --soft-shadow: 0 10px 30px rgba(0,0,0,0.35);
       --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: "JetBrains Mono", "Fira Code", Consolas, "Courier New", monospace;
     }
@@ -26,9 +29,10 @@
     ::-webkit-scrollbar-thumb:hover { background: #4b4f6e; }
     .topbar { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
     .brand { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
-    .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(#4b8bf7, var(--primary)); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 5px 0 var(--edge-primary), 0 10px 18px rgba(0,0,0,0.45); transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.2s; }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-primary:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge-primary), 0 4px 8px rgba(0,0,0,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 50; }
     .modal-overlay.active { opacity: 1; pointer-events: auto; }
     .modal-content { background: var(--bg-panel); width: 100%; max-width: 800px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; transform: translateY(20px); transition: transform 0.2s ease; max-height: 90vh; }
@@ -38,8 +42,9 @@
     .btn-close:hover { color: var(--text-main); }
     .modal-body { padding: 24px; overflow-y: auto; }
     .modal-footer { padding: 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
-    .btn-cancel { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+    .btn-cancel { background: #23263a; color: var(--text-main); border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 0 var(--edge-gray), 0 8px 14px rgba(0,0,0,0.4); transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.2s; }
+    .btn-cancel:hover { background: #2b2e45; }
+    .btn-cancel:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge-gray); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group.full-width { grid-column: 1 / -1; }
@@ -47,14 +52,16 @@
     input, select { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.95rem; background: var(--bg-base); color: var(--text-main); outline: none; transition: all 0.2s ease; appearance: none; }
     select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 14px top 50%; background-size: 10px auto; }
     input:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
-    .btn-small { background: var(--secondary); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; text-transform: none; }
-    .btn-small:hover { background: var(--secondary-hover); }
+    .btn-small { background: linear-gradient(#5b6472, var(--secondary)); border: none; color: white; padding: 5px 10px; border-radius: 7px; font-size: 0.72rem; font-weight: 600; cursor: pointer; text-transform: none; box-shadow: 0 3px 0 var(--edge-gray); transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.2s; }
+    .btn-small:hover { filter: brightness(1.1); }
+    .btn-small:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge-gray); }
     .main { padding: 32px; overflow-y: auto; flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 24px; align-content: start; }
     .task-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; height: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); overflow: hidden; }
     .task-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
     .task-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
-    .btn-stop { background: transparent; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 500; color: var(--danger); transition: all 0.2s ease; }
-    .btn-stop:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger-hover); }
+    .btn-stop { background: linear-gradient(#f66262, var(--danger)); border: none; color: white; padding: 7px 16px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; font-weight: 700; box-shadow: 0 4px 0 var(--edge-danger), 0 7px 12px rgba(0,0,0,0.4); transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.2s; white-space: nowrap; }
+    .btn-stop:hover { filter: brightness(1.08); }
+    .btn-stop:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge-danger); }
     .console { flex: 1; background: var(--bg-console); color: #a9b1d6; padding: 16px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; }
     .console p { margin-bottom: 6px; word-wrap: break-word; }
     .log-info    { color: #7aa2f7; }
@@ -62,6 +69,27 @@
     .log-warn    { color: #e0af68; }
     .log-error   { color: #f7768e; font-weight: bold; }
     .log-step    { color: #bb9af7; }
+    /* ---------- gamified layer: quest framing, progress, rewards ---------- */
+    .task-card { position: relative; border-radius: var(--radius-lg); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .task-card:hover { transform: translateY(-2px); box-shadow: var(--soft-shadow); }
+    .quest { display: flex; gap: 8px; align-items: center; padding: 10px 32px; font-size: 0.8rem; color: var(--text-muted); background: rgba(255,255,255,0.015); border-bottom: 1px solid var(--border); }
+    .quest b { color: var(--text-main); }
+    .hint { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+    .pill { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+    .pill-run { background: rgba(59,130,246,0.15); color: #7aa2f7; animation: pulse 1.6s ease-in-out infinite; }
+    .pill-done { background: rgba(34,197,94,0.18); color: #4ade80; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .err-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(239,68,68,0.15); color: #f7768e; white-space: nowrap; }
+    .progress { height: 8px; background: #141625; border-radius: 6px; overflow: hidden; margin: 10px 18px 0; }
+    .progress > div { height: 100%; width: 0%; border-radius: 6px; background: linear-gradient(90deg, #3b82f6, #a78bfa); transition: width 0.5s ease; }
+    .progress-label { font-size: 0.7rem; color: var(--text-muted); padding: 4px 18px 0; }
+    .saved-counter { font-size: 0.72rem; color: #4ade80; font-weight: 600; padding: 2px 18px 8px; }
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #23263a; color: var(--text-main); border: 1px solid var(--border); padding: 12px 22px; border-radius: 12px; font-size: 0.88rem; font-weight: 500; box-shadow: var(--soft-shadow); opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 100; max-width: 90vw; text-align: center; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.ok { border-color: var(--success); }
+    .toast.bad { border-color: var(--danger); }
+    .confetti { position: absolute; width: 8px; height: 12px; border-radius: 2px; top: 0; pointer-events: none; animation: fall 1.4s ease-in forwards; z-index: 5; }
+    @keyframes fall { to { transform: translateY(420px) rotate(540deg); opacity: 0; } }
     .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5; margin-top: 15vh; }
   </style>
 </head>
@@ -71,21 +99,25 @@
   </div>
 
   <div class="topbar">
-    <div class="brand">Translation AI Manager</div>
+    <div class="brand">📚 Translation AI Manager <span style="font-weight:400;font-size:0.78rem;color:var(--text-muted)">— pick a quest, press start, watch it work</span></div>
     <button class="btn-primary" id="btn-new-task" onclick="openModal()">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
       New Task
     </button>
   </div>
 
+  <div class="quest">🗺️ <span><b>Quest loop:</b> translate → edit → proof-read — or pick <b>★ Autopilot</b> and fly the whole route &nbsp;·&nbsp; loot lands in <b>output/</b> &nbsp;·&nbsp; stuck chapters? type <b>failed</b> in the range box</span></div>
+
   <div class="main" id="task-container">
     <div class="empty-state" id="empty-state">
       <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 12px;">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>
-      <p>No active tasks running.</p>
+      <p>No active quests. Press <b>＋ New Task</b> to start your first run. 🎮</p>
     </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <div class="modal-overlay" id="taskModal">
     <div class="modal-content">
@@ -102,6 +134,7 @@
           <div class="form-group">
             <label>Pipeline Stage</label>
             <select id="mode" onchange="handleModeChange()">
+              <option value="auto">★ Autopilot — translate → edit → proof (full pipeline)</option>
               <option value="translate">1. Translate (Input → output/translate)</option>
               <option value="edit">2. Edit (translate → output/edited)</option>
               <option value="proof">3. Proof Read (edited → output/proofing)</option>
@@ -132,18 +165,21 @@
               </span>
             </label>
             <input type="text" id="chapters" placeholder="e.g. all, failed, 1-5, 8">
+            <div class="hint">“all” = everything · “failed” = retry the stuck ones · “1-5” = a range.</div>
           </div>
 
           <div class="form-group">
             <label title="How many tabs process at the same time">Concurrent Tabs</label>
             <input type="number" id="concurrentTabs" value="1" min="1" max="5">
+            <div class="hint">More tabs = faster, but easier to hit AI limits. Start with 1.</div>
           </div>
           <div class="form-group">
             <label>Prompt Injection Method</label>
             <select id="promptMode">
-              <option value="1">Separate (Once at start)</option>
-              <option value="2">Combined (Every chunk)</option>
+              <option value="1">Separate — once at the start (recommended)</option>
+              <option value="2">Combined — with every chunk</option>
             </select>
+            <div class="hint">“Separate” feels most human to the AI.</div>
           </div>
           <div class="form-group">
             <label>Chunk Size (Words)</label>
@@ -152,6 +188,7 @@
           <div class="form-group">
             <label>Chunk Delay (Seconds)</label>
             <input type="number" id="chunkDelay" value="20" min="1" max="120">
+            <div class="hint">A polite pause so the AI doesn't throttle you.</div>
           </div>
           <div class="form-group">
             <label>AI Chatbot</label>
@@ -177,6 +214,31 @@
   <script>
     let configData = {};
     let ws;
+    let savedCount = {};
+    let toastTimer = null;
+
+    function toast(msg, ok = true) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast show ' + (ok ? 'ok' : 'bad');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = 'toast'; }, 3800);
+    }
+
+    function confettiBurst(taskId) {
+      const card = document.getElementById(`task-${taskId}`);
+      if (!card) return;
+      const colors = ['#3b82f6', '#a78bfa', '#4ade80', '#fbbf24', '#f7768e'];
+      for (let i = 0; i < 28; i++) {
+        const s = document.createElement('span');
+        s.className = 'confetti';
+        s.style.left = (Math.random() * 100) + '%';
+        s.style.background = colors[i % colors.length];
+        s.style.animationDelay = (Math.random() * 0.4) + 's';
+        card.appendChild(s);
+        setTimeout(() => s.remove(), 2200);
+      }
+    }
 
     function connectWebSocket() {
       ws = new WebSocket(`ws://${window.location.host}`);
@@ -195,6 +257,35 @@
           line.textContent = `[${time}] ${data.msg}`;
           consoleEl.appendChild(line);
           consoleEl.scrollTop = consoleEl.scrollHeight;
+
+          const msg = String(data.msg || '');
+          const bar = document.getElementById(`bar-${data.taskId}`);
+          const plabel = document.getElementById(`plabel-${data.taskId}`);
+          const chunk = msg.match(/Chunk (\d+)\/(\d+)/);
+          if (chunk && bar) {
+            bar.style.width = Math.round(chunk[1] / chunk[2] * 100) + '%';
+            if (plabel) plabel.textContent = `⚔️ Chunk ${chunk[1]} of ${chunk[2]}`;
+          }
+          const proc = msg.match(/Processing (\S+?)(?:\.\.\.|\s)/);
+          if (proc && plabel) plabel.textContent = `📖 ${proc[1]}`;
+          if (data.level === 'error') {
+            const errs = consoleEl.querySelectorAll('.log-error').length;
+            const badge = document.getElementById(`err-${data.taskId}`);
+            if (badge) { badge.style.display = 'inline-block'; badge.textContent = `⚠ ${errs}`; }
+          }
+          if (data.level === 'success' && (/Saved\./.test(msg) || /Proof read saved\./.test(msg))) {
+            savedCount[data.taskId] = (savedCount[data.taskId] || 0) + 1;
+            const sc = document.getElementById(`saved-${data.taskId}`);
+            if (sc) { sc.style.display = 'block'; sc.textContent = `🎁 Loot secured: ${savedCount[data.taskId]} chapter${savedCount[data.taskId] > 1 ? 's' : ''}`; }
+          }
+          if (msg.includes('All done!')) {
+            const pill = document.getElementById(`pill-${data.taskId}`);
+            if (pill) { pill.className = 'pill pill-done'; pill.textContent = '✅ Quest complete'; }
+            if (bar) bar.style.width = '100%';
+            if (plabel) plabel.textContent = '🏆 Finished!';
+            confettiBurst(data.taskId);
+            toast('Quest complete! Loot is in output/. 🎉', true);
+          }
         }
       };
       ws.onclose = () => {
@@ -233,6 +324,7 @@
 
       const mode = document.getElementById('mode').value;
       if (mode === 'translate') document.getElementById('chunkSize').value = '1000';
+      else if (mode === 'auto') document.getElementById('chunkSize').value = '1000';
       else if (mode === 'edit') document.getElementById('chunkSize').value = '1500';
       else if (mode === 'glossary') document.getElementById('chunkSize').value = '1000';
       else document.getElementById('chunkSize').value = '2000';
@@ -249,6 +341,7 @@
       const mode = document.getElementById('mode').value;
       let books = [];
       if (mode === 'translate') books = configData.inputBooks || [];
+      else if (mode === 'auto') books = configData.inputBooks || [];
       else if (mode === 'edit') books = configData.translateBooks || [];
       else if (mode === 'proof') books = configData.editedBooks || [];
       else if (mode === 'score') books = configData.proofedBooks || [];
@@ -270,7 +363,7 @@
     async function findMissingChapters() {
       const mode = document.getElementById('mode').value;
       const bookName = document.getElementById('book').value;
-      if (!bookName) return alert("Select a book first.");
+      if (!bookName) return toast('Pick a book first. 📖', false);
       try {
         const res = await fetch('/api/check-missing', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -278,17 +371,17 @@
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        if (data.missing.length === 0) { alert("All chapters found!"); }
+        if (data.missing.length === 0) { toast('All chapters are already done. Nice! 🎉', true); }
         else {
           document.getElementById('chapters').value = data.missing.join(', ');
-          alert(`Found ${data.missing.length} missing chapters.`);
+          toast(`Found ${data.missing.length} missing chapters — filled in for you. 👇`, true);
         }
-      } catch (e) { alert("Failed: " + e.message); }
+      } catch (e) { toast('Could not check: ' + e.message, false); }
     }
 
         async function findProofInsurance() {
       const bookName = document.getElementById('book').value;
-      if (!bookName) return alert("Select a book first.");
+      if (!bookName) return toast('Pick a book first. 📖', false);
 
       try {
         const res = await fetch('/api/check-proof-insurance', {
@@ -301,25 +394,25 @@
         if (data.error) throw new Error(data.error);
 
         if (!data.checked) {
-          alert("No proofed JSON chapters found for this book.");
+          toast('No finished chapters found for this book yet.', false);
           return;
         }
 
         if (data.redo.length === 0) {
-          alert(`All ${data.checked} checked chapters are within 300 words of their English source.`);
+          toast(`All ${data.checked} chapters look healthy. ✅`, true);
           return;
         }
 
         document.getElementById('chapters').value = data.redo.join(', ');
 
-        let msg = `Found ${data.redo.length} chapter(s) needing redo.`;
+        let msg = `⚠️ ${data.redo.length} suspicious chapter${data.redo.length > 1 ? 's' : ''} — filled in for redo.`;
         if (data.skippedNoEnglish) {
-          msg += `\nSkipped ${data.skippedNoEnglish} chapter(s) because no English source was found.`;
+          msg += ` (${data.skippedNoEnglish} skipped: no English source found.)`;
         }
 
-        alert(msg);
+        toast(msg, true);
       } catch (e) {
-        alert("Failed: " + e.message);
+        toast('Could not check: ' + e.message, false);
       }
     }
 
@@ -360,11 +453,12 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (data.error) return alert("Error: " + data.error);
+        if (data.error) return toast('Could not start: ' + data.error, false);
         document.getElementById('empty-state').style.display = 'none';
         createTaskCard(data.taskId, data.title);
         closeModal();
-      } catch (e) { alert("Failed to start task."); }
+        toast('Quest started! Watch it work below. 🚀', true);
+      } catch (e) { toast('Could not start the job. Is the server running?', false); }
     }
 
     function createTaskCard(taskId, title) {
@@ -375,17 +469,24 @@
       card.innerHTML = `
         <div class="task-header">
           <div class="task-title" title="${title}">${title}</div>
-          <button class="btn-stop" onclick="stopTask('${taskId}')">Stop</button>
+          <span class="err-badge" id="err-${taskId}" style="display:none"></span>
+          <span class="pill pill-run" id="pill-${taskId}">● Working…</span>
+          <button class="btn-stop" onclick="stopTask('${taskId}')">⏹ Stop</button>
         </div>
+        <div class="progress"><div id="bar-${taskId}"></div></div>
+        <div class="progress-label" id="plabel-${taskId}">Getting ready…</div>
+        <div class="saved-counter" id="saved-${taskId}" style="display:none"></div>
         <div class="console" id="console-${taskId}">
-          <p class="log-info">[System] Task queued and starting...</p>
+          <p class="log-info">[System] Quest accepted! Opening your Chrome… ☕</p>
         </div>`;
       container.insertBefore(card, container.firstChild);
     }
 
     async function stopTask(taskId) {
-      if (confirm("Stop this task?")) {
+      if (confirm("Stop this job? It finishes its current step, then halts.")) {
         await fetch(`/api/stop/${taskId}`, { method: 'DELETE' });
+        const pill = document.getElementById(`pill-${taskId}`);
+        if (pill) { pill.className = 'pill'; pill.style.background = 'rgba(148,163,184,0.15)'; pill.style.color = '#94a3b8'; pill.textContent = '⏹ Stopped'; }
       }
     }
 
